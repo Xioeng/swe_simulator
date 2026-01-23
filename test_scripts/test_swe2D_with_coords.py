@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import matplotlib.pyplot as plt
 import numpy as np
+import utils.utils as utils
 from clawpack import riemann
 from clawpack.riemann.shallow_roe_with_efix_2D_constants import (
     depth,
@@ -21,9 +22,8 @@ from clawpack.riemann.shallow_roe_with_efix_2D_constants import (
 )
 from mpi4py import MPI
 
-import utils
-from forcing import wind_forcing_step
-from mapper import LocalLonLatMetricMapper
+from swe_simulator.forcing import wind_forcing_step
+from swe_simulator.mapper import LocalLonLatMetricMapper
 
 # MPI setup
 comm = MPI.COMM_WORLD

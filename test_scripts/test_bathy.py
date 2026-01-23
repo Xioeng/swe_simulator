@@ -1,8 +1,7 @@
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
-
-from utils import interpolate_gebco_on_grid
+from utils.utils import interpolate_gebco_on_grid
 
 
 def main():
