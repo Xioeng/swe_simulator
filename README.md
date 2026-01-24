@@ -845,27 +845,3 @@ MIT License - see LICENSE file for details.
 
 ---
 
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@software{swe_simulator,
-  author = {Your Name},
-  title = {SWE Simulator: 2D Shallow Water Equations Solver},
-  year = {2025},
-  url = {https://github.com/yourusername/swe_simulator}
-}
-```
-
----
-
-## Contact & Support
-
-- **GitHub**: https://github.com/yourusername/swe_simulator
-- **Issues**: https://github.com/yourusername/swe_simulator/issues
-- **Email**: your.email@example.com
-
----
-
-**Last Updated**: January 2025
