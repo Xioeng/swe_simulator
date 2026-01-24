@@ -133,7 +133,7 @@ def plot_solution(output_path: str, frame: int = 0, **kargs) -> None:
     plt.show()
 
 
-def animate_solution(output_path: str, frames: List[int], **kargs) -> None:
+def animate_solution(output_path: str, frames: List[int] | None, **kargs) -> None:
     """Create an animation of solutions over multiple frames from Clawpack output.
 
     Parameters
@@ -184,7 +184,8 @@ def animate_solution(output_path: str, frames: List[int], **kargs) -> None:
         free_surface = bathymetry + h
         mask = h < wave_treshold
         free_surface[mask] = np.nan
-        v_x, v_y = sol[1, :, :] / h, sol[2, :, :] / h
+        h_div = np.where(h <= wave_treshold, 1.0, h)
+        v_x, v_y = sol[1, :, :] / h_div, sol[2, :, :] / h_div
         v_x[h <= wave_treshold] = 0.0
         v_y[h <= wave_treshold] = 0.0
         v_x_scaled, v_y_scaled = normalize_velocities_for_plotting(

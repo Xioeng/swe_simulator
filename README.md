@@ -1,280 +1,369 @@
-# sweSolver Class Documentation
+# SWE Simulator
 
-## Overview
-
-`sweSolver` is a Python class for solving 2D shallow water equations (SWE) using the PyClaw library from Clawpack. It provides a high-level interface for simulating water flow over bathymetry with support for geographic coordinates (longitude/latitude), wind forcing, and customizable boundary conditions.
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [API Reference](#api-reference)
-- [Complete Examples](#complete-examples)
-- [Output Format](#output-format)
-- [Tips and Best Practices](#tips-and-best-practices)
-
----
+A Python-based 2D Shallow Water Equations (SWE) solver using [PyClaw](http://www.clawpack.org/pyclaw/) for simulating storm surge, tsunami propagation, and coastal flooding scenarios.
 
 ## Features
 
-- **Geographic Coordinate System**: Works with longitude/latitude coordinates and automatically converts to metric space
-- **Flexible Bathymetry**: Support for complex ocean floor topography
-- **Initial Conditions**: Set water surface elevation and momentum fields
-- **Wind Forcing**: Add atmospheric wind forcing to the simulation
-- **Boundary Conditions**: Multiple types (wall, extrapolation, periodic)
-- **MPI Parallelization**: Built-in support for parallel computing
-- **Automatic Output**: Saves solutions, grid coordinates, and bathymetry data
+- ✅ **2D Shallow Water Equations** solver with Roe-type Riemann solver
+- ✅ **Geographic coordinate mapping** (lon/lat to local metric coordinates)
+- ✅ **Real bathymetry support** via GEBCO NetCDF data
+- ✅ **Wind forcing** for hurricane/storm surge simulations
+- ✅ **MPI parallelization** for large-scale simulations
+- ✅ **Adaptive time stepping** with CFL condition
+- ✅ **Flexible boundary conditions** (wall, extrapolation, periodic)
+- ✅ **Visualization tools** with animation support
+- ✅ **Configuration management** via dataclasses and JSON
+
+---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [Complete Examples](#complete-examples)
+- [Output Format](#output-format)
+- [Utilities](#utilities)
+- [Physics](#physics)
+- [Tips and Best Practices](#tips-and-best-practices)
+- [Troubleshooting](#troubleshooting)
+- [References](#references)
 
 ---
 
 ## Installation
 
-### Required Dependencies
+
+### Install from source
 
 ```bash
-pip install clawpack mpi4py numpy
-```
-
-### Optional Dependencies (for visualization)
-
-```bash
-pip install matplotlib
+git clone https://github.com/yourusername/swe_simulator.git
+cd swe_simulator
+pip install -r requirements.txt .
 ```
 
 ---
 
 ## Quick Start
 
+### Example 1: Simple Gaussian Wave
+
 ```python
 import numpy as np
-import clawpack.petclaw as pyclaw
-from sweSolver import sweSolver
+import swe_simulator
 
-# 1. Initialize solver
-solver = sweSolver(multiple_output_times=True)
-
-# 2. Configure domain
-solver.set_domain(
-    lon_range=(-80.20, -80.06),  # Longitude range (degrees)
-    lat_range=(25.65, 25.93),    # Latitude range (degrees)
-    nx=40,                        # Grid cells in x
-    ny=40                         # Grid cells in y
+# Create configuration
+config = swe_simulator.SimulationConfig(
+    lon_range=(-1.0, 1.0),
+    lat_range=(-1.0, 1.0),
+    nx=50,
+    ny=50,
+    t_final=10.0,
+    dt=0.1,
+    gravity=9.81,
+    bc_lower=(0, 0),
+    bc_upper=(0, 0),
+    output_dir="_output",
 )
 
-# 3. Set time parameters
-solver.set_time_parameters(t_final=100.0, dt=1.0)
+# Initialize solver
+solver = swe_simulator.SWESolver(config=config)
 
-# 4. Define bathymetry (ocean floor depth, positive values)
-bathymetry = 10 * np.ones((solver.ny, solver.nx))
-solver.set_bathymetry(bathymetry_array=bathymetry)
+# Set flat bathymetry (-10m depth)
+bathymetry = -10.0 * np.ones((config.ny, config.nx))
+solver.set_bathymetry(bathymetry)
 
-# 5. Define initial conditions [surface elevation, x-momentum, y-momentum]
-X_metric, Y_metric = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
-eta = 0.2 + 3 * np.exp(-0.00001 * ((X_metric - 3500)**2 + Y_metric**2))
-initial_condition = np.stack([eta, np.zeros_like(eta), np.zeros_like(eta)], axis=0)
-solver.set_initial_condition(initial_condition=initial_condition)
+# Set Gaussian hump initial condition
+x, y = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
+h_init = 2.0 * np.exp(-0.01 * (x**2 + y**2))
+initial_condition = np.stack([
+    h_init,
+    np.zeros_like(h_init),  # hu (x-momentum)
+    np.zeros_like(h_init),  # hv (y-momentum)
+], axis=0)
+solver.set_initial_condition(initial_condition)
 
-# 6. Run simulation
-solver.solve()
+# Run simulation
+solver.setup_solver()
+solutions = solver.solve()
+
+print(f"Simulation complete! Shape: {solutions.shape}")
+```
+
+### Example 2: Storm Surge with Real Bathymetry
+
+```python
+import numpy as np
+import swe_simulator
+import swe_simulator.utils as sim_utils
+
+# Configuration for Florida coast
+config = swe_simulator.SimulationConfig(
+    lon_range=(-80.1865, -80.0791),
+    lat_range=(25.6678, 25.9137),
+    nx=40,
+    ny=40,
+    t_final=1000.0,
+    dt=1.0,
+    gravity=9.81,
+    bc_lower=(1, 1),
+    bc_upper=(1, 1),
+    output_dir="_output",
+    multiple_output_times=True,
+)
+
+# Initialize solver
+solver = swe_simulator.SWESolver(config=config)
+
+# Load GEBCO bathymetry
+bathymetry = sim_utils.interpolate_gebco_on_grid(
+    X=solver.X_coord,
+    Y=solver.Y_coord,
+    nc_path="data/gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc"
+)
+bathymetry[np.isnan(bathymetry)] = 0.0
+solver.set_bathymetry(bathymetry)
+
+# Set radial dam break initial condition
+x, y = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
+h_init = 0.2 + 3.0 * np.exp(-0.00001 * ((x - 3500)**2 + y**2))
+initial_condition = np.stack([h_init, np.zeros_like(h_init), np.zeros_like(h_init)], axis=0)
+solver.set_initial_condition(initial_condition)
+
+# Add hurricane wind forcing (57 mph from NE)
+u_wind = -17.8  # m/s
+v_wind = 17.8   # m/s
+solver.set_wind_forcing(u_wind=u_wind, v_wind=v_wind)
+
+# Run simulation
+solver.setup_solver()
+solutions = solver.solve()
+
+# Visualize
+if solver.rank == 0:
+    swe_simulator.utils.animate_solution(
+        output_path=config.output_dir,
+        frames=None,  # all frames
+        wave_threshold=1e-2,
+        interval=100,
+        save=False,
+    )
+```
+
+---
+
+## Configuration
+
+### SimulationConfig Dataclass
+
+The `SimulationConfig` dataclass centralizes all simulation parameters:
+
+```python
+config = swe_simulator.SimulationConfig(
+    # Domain
+    lon_range=(-80.2, -80.0),      # Longitude range (degrees)
+    lat_range=(25.6, 25.9),         # Latitude range (degrees)
+    nx=40,                           # Grid cells in x
+    ny=40,                           # Grid cells in y
+    
+    # Time
+    t_final=1000.0,                  # Final time (seconds)
+    dt=1.0,                          # Time step (seconds)
+    
+    # Physics
+    gravity=9.81,                    # Gravitational acceleration (m/s²)
+    
+    # Boundary conditions
+    bc_lower=(0, 1),     # Lower BCs [x, y]
+    bc_upper=(1, 0),     # Upper BCs [x, y]
+    
+    # Output
+    output_dir="_output",            # Output directory
+    multiple_output_times=True,      # Multiple output times
+    frame_interval=1,                # Frames between outputs
+    
+    # Numerical
+    cfl_desired=0.9,                 # Desired CFL number
+    cfl_max=1.0,                     # Maximum CFL number
+)
+
+# Validate configuration (automatic in __post_init__)
+config.validate()
+
+# Save configuration
+config.save("config.json")
+
+# Load configuration
+config = swe_simulator.SimulationConfig.load("config.json")
+```
+
+### Boundary Conditions
+
+Available boundary condition types:
+- `'0'` - Solid wall (reflective)
+- `'1'` - Extrapolation (open boundary)
+- `'2' ` - Periodic boundary
+
+```python
+# Example: Open ocean boundaries
+bc_lower=(1, 1)
+bc_upper=(1, 1)
+
+# Example: Coastal domain with wall on west
+bc_lower=(0, 1)
+bc_upper=(1, 1)
 ```
 
 ---
 
 ## API Reference
 
-### Constructor
+### SWESolver
 
-#### `sweSolver(multiple_output_times=True)`
+Main solver class for running simulations.
+
+```python
+solver = swe_simulator.SWESolver(config=config)
+```
+
+#### Constructor
+
+**`SWESolver(config: Optional[SimulationConfig] = None)`**
 
 Initialize the shallow water equation solver.
 
 **Parameters:**
-- `multiple_output_times` (bool, default=True): 
-  - If `True`: Outputs solution at every time step
-  - If `False`: Only outputs the final solution
+- `config` (SimulationConfig, optional): Configuration object. If None, creates default config.
 
 **Attributes:**
-- `gravity` (float): Gravitational acceleration (default: 9.81 m/s²)
-- `nx`, `ny` (int): Number of grid cells in x and y directions
-- `X_coord`, `Y_coord` (np.ndarray): Grid coordinates in lon/lat
-- `mapper` (LocalLonLatMetricMapper): Coordinate transformation object
-- `claw` (pyclaw.Controller): PyClaw controller after `setup_solver()` is called
+- `config` (SimulationConfig): Simulation configuration
+- `X_coord`, `Y_coord` (np.ndarray): Geographic coordinate arrays (longitude, latitude)
+- `mapper` (GeographicCoordinateMapper): Coordinate transformation object
+- `rank` (int): MPI rank (0 for serial runs)
+- `bathymetry_array` (np.ndarray): Bathymetry data
+- `initial_condition_array` (np.ndarray): Initial condition data
 
----
+#### Methods
 
-### Methods
+**`set_bathymetry(bathymetry_array: np.ndarray) -> None`**
 
-#### `set_domain(lon_range, lat_range, nx, ny)`
-
-Set up the computational domain in geographic coordinates.
-
-**Parameters:**
-- `lon_range` (tuple): `(min_longitude, max_longitude)` in degrees
-- `lat_range` (tuple): `(min_latitude, max_latitude)` in degrees
-- `nx` (int): Number of grid cells in x-direction (longitude)
-- `ny` (int): Number of grid cells in y-direction (latitude)
-
-**Effects:**
-- Creates coordinate mapper for lon/lat to metric conversion
-- Generates cell-centered grid coordinates
-- Stores grid dimensions
-
-**Example:**
-```python
-solver.set_domain(
-    lon_range=(-80.2015, -80.0641),
-    lat_range=(25.6528, 25.9287),
-    nx=40,
-    ny=40
-)
-```
-
----
-
-#### `set_time_parameters(t_final, dt)`
-
-Configure the simulation time settings.
+Set the bathymetry for the domain.
 
 **Parameters:**
-- `t_final` (float): Final simulation time in seconds
-- `dt` (float): Time step size in seconds
-
-**Note:** The number of output times is calculated as `int(t_final / dt)` when `multiple_output_times=True`.
-
-**Example:**
-```python
-solver.set_time_parameters(t_final=100.0, dt=1.0)  # 100 seconds, 1-second steps
-```
-
----
-
-#### `set_bathymetry(bathymetry_array)`
-
-Define the ocean floor topography.
-
-**Parameters:**
-- `bathymetry_array` (np.ndarray): 2D array of shape `(ny, nx)` containing depth values in meters
+- `bathymetry_array` (np.ndarray): Array of shape `(ny, nx)` with bathymetry values in meters
   - **Negative values** represent depth below sea level (e.g., -10 means 10 meters deep)
   - **Positive values** represent elevation above sea level
-  - Must match the grid dimensions set in `set_domain()`
+
+**Raises:**
+- `ValueError`: If bathymetry shape doesn't match grid dimensions or contains NaN/Inf
 
 **Example:**
 ```python
 # Flat ocean floor at 10 meters depth
-bathymetry = -10 * np.ones((solver.ny, solver.nx))
-solver.set_bathymetry(bathymetry_array=bathymetry)
-
-# Sloping bathymetry
-x = np.linspace(0, 1, solver.nx)
-y = np.linspace(0, 1, solver.ny)
-X, Y = np.meshgrid(x, y)
-bathymetry = -20 + 15 * X  # Slopes from -20m to -5m
-solver.set_bathymetry(bathymetry_array=bathymetry)
+bathymetry = -10.0 * np.ones((solver.config.ny, solver.config.nx))
+solver.set_bathymetry(bathymetry)
 ```
 
 ---
 
-#### `set_initial_condition(initial_condition)`
+**`set_initial_condition(initial_condition: np.ndarray) -> None`**
 
 Set the initial state of the water.
 
 **Parameters:**
 - `initial_condition` (np.ndarray): 3D array of shape `(3, ny, nx)` containing:
-  - `[0, :, :]`: Water surface elevation η (eta) in meters above/below mean sea level
-  - `[1, :, :]`: x-momentum (hu) in m²/s
-  - `[2, :, :]`: y-momentum (hv) in m²/s
+  - `[0, :, :]`: Water depth `h` in meters
+  - `[1, :, :]`: x-momentum `hu` in m²/s
+  - `[2, :, :]`: y-momentum `hv` in m²/s
 
-**Note:** The actual water depth `h` is computed as `h = max(0, η - bathymetry)`.
+**Raises:**
+- `ValueError`: If shape doesn't match expected dimensions, contains NaN/Inf, or has negative depths
 
 **Example:**
 ```python
 # Gaussian wave with zero initial momentum
-X_metric, Y_metric = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
-eta = 0.2 + 3 * np.exp(-0.00001 * ((X_metric - 3500)**2 + Y_metric**2))
-momentum_x = np.zeros_like(eta)
-momentum_y = np.zeros_like(eta)
-initial_condition = np.stack([eta, momentum_x, momentum_y], axis=0)
-solver.set_initial_condition(initial_condition=initial_condition)
+x, y = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
+h_init = 2.0 * np.exp(-0.01 * (x**2 + y**2))
+initial_condition = np.stack([
+    h_init,
+    np.zeros_like(h_init),  # hu
+    np.zeros_like(h_init),  # hv
+], axis=0)
+solver.set_initial_condition(initial_condition)
 ```
 
 ---
 
-#### `set_boundary_conditions(lower, upper)`
+**`set_wind_forcing(u_wind: float, v_wind: float, c_d: float = 1.3e-3) -> None`**
 
-Configure boundary conditions for the domain edges.
-
-**Parameters:**
-- `lower` (list): `[x_lower_BC, y_lower_BC]` - Boundary conditions for lower edges
-- `upper` (list): `[x_upper_BC, y_upper_BC]` - Boundary conditions for upper edges
-
-**Available Boundary Condition Types:**
-- `pyclaw.BC.wall` (0): Reflective wall (zero normal velocity)
-- `pyclaw.BC.extrap` (1): Extrapolation (non-reflective outflow)
-- `pyclaw.BC.periodic` (2): Periodic boundary
-
-**Default:** All boundaries are set to `pyclaw.BC.wall`.
-
-**Example:**
-```python
-# Wall on x-lower and y-upper, extrapolation on others
-solver.set_boundary_conditions(
-    lower=[pyclaw.BC.wall, pyclaw.BC.extrap],
-    upper=[pyclaw.BC.extrap, pyclaw.BC.wall]
-)
-```
-
----
-
-#### `set_forcing(wind_vector)`
-
-Add wind forcing to the simulation.
+Add wind stress forcing to the simulation.
 
 **Parameters:**
-- `wind_vector` (tuple): `(U_wind, V_wind)` - Wind velocity components in m/s
-  - `U_wind`: Wind velocity in x-direction (eastward)
-  - `V_wind`: Wind velocity in y-direction (northward)
+- `u_wind` (float): Wind velocity in x-direction (eastward) in m/s
+- `v_wind` (float): Wind velocity in y-direction (northward) in m/s
+- `c_d` (float): Drag coefficient (default: 1.3×10⁻³)
 
 **Example:**
 ```python
 # 10 m/s eastward wind, 5 m/s northward wind
-solver.set_forcing(wind_vector=(10.0, 5.0))
+solver.set_wind_forcing(u_wind=10.0, v_wind=5.0)
 
-# Hurricane-force winds (southwest to northeast)
+# Hurricane-force winds from northeast
 speed_mph = 57
-U_wind = (-1/np.sqrt(2)) * 0.44 * speed_mph  # Convert mph to m/s
-V_wind = (1/np.sqrt(2)) * 0.44 * speed_mph
-solver.set_forcing(wind_vector=(U_wind, V_wind))
+u_wind = (-1/np.sqrt(2)) * 0.44704 * speed_mph  # Convert mph to m/s
+v_wind = (1/np.sqrt(2)) * 0.44704 * speed_mph
+solver.set_wind_forcing(u_wind=u_wind, v_wind=v_wind)
 ```
 
 ---
 
-#### `setup_solver()`
+**`setup_solver() -> None`**
 
-Construct the PyClaw solver, domain, and controller.
-
-**Returns:** `pyclaw.Controller` object
-
-**Note:** This method is automatically called by `solve()` if not already called. It validates that all required configuration has been set.
+Configure the PyClaw solver with all settings.
 
 **Raises:**
-- `RuntimeError`: If domain, initial conditions, bathymetry, or time parameters are not set
+- `ValueError`: If required configuration is missing
+
+**Note:** Automatically called by `solve()` if not already called.
 
 ---
 
-#### `solve()`
+**`solve() -> np.ndarray`**
 
 Run the simulation.
 
-**Returns:** Status code from PyClaw controller
+**Returns:**
+- `np.ndarray`: Solution array of shape `(n_frames, 3, ny, nx)` containing water depth, x-momentum, and y-momentum at each output time.
 
-**Note:** Automatically calls `setup_solver()` if not already called.
+**Raises:**
+- `ValueError`: If configuration is incomplete
 
 **Example:**
 ```python
-status = solver.solve()
-print(f"Simulation completed with status: {status}")
+solver.setup_solver()
+solutions = solver.solve()
+print(f"Simulation complete! Shape: {solutions.shape}")
 ```
+
+---
+
+#### Properties
+
+**`X_coord`, `Y_coord`**
+- Geographic coordinate arrays (longitude, latitude in degrees)
+- Shape: `(ny, nx)`
+- Available after domain initialization
+
+**`mapper`**
+- `GeographicCoordinateMapper` instance for coordinate transformations
+- Methods:
+  - `coord_to_metric(lon, lat)`: Convert lon/lat to local metric coordinates
+  - `metric_to_coord(x, y)`: Convert metric coordinates to lon/lat
+
+**`rank`**
+- MPI rank (integer)
+- 0 for serial runs or master process in parallel runs
 
 ---
 
@@ -284,149 +373,144 @@ print(f"Simulation completed with status: {status}")
 
 ```python
 import numpy as np
-import clawpack.petclaw as pyclaw
-from sweSolver import sweSolver
+import swe_simulator
 
-# Initialize
-solver = sweSolver(multiple_output_times=True)
-
-# Domain: Small region
-solver.set_domain(
+# Configuration
+config = swe_simulator.SimulationConfig(
     lon_range=(-10.0, 10.0),
     lat_range=(-10.0, 10.0),
     nx=100,
-    ny=100
+    ny=100,
+    t_final=50.0,
+    dt=0.5,
+    gravity=9.81,
+    bc_lower=(0, 0),
+    bc_upper=(0, 0),
+    output_dir="_output",
 )
 
-# Time: 50 seconds
-solver.set_time_parameters(t_final=50.0, dt=0.5)
+# Initialize solver
+solver = swe_simulator.SWESolver(config=config)
 
-# Bathymetry: Flat at -10m
-bathymetry = -10 * np.ones((solver.ny, solver.nx))
-solver.set_bathymetry(bathymetry_array=bathymetry)
+# Flat bathymetry at -10m
+bathymetry = -10.0 * np.ones((config.ny, config.nx))
+solver.set_bathymetry(bathymetry)
 
-# Initial condition: Gaussian hump
-X_metric, Y_metric = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
-eta = 2.0 * np.exp(-0.0001 * (X_metric**2 + Y_metric**2))
-initial_condition = np.stack([eta, np.zeros_like(eta), np.zeros_like(eta)], axis=0)
-solver.set_initial_condition(initial_condition=initial_condition)
-
-# Boundary: All walls
-solver.set_boundary_conditions(
-    lower=[pyclaw.BC.wall, pyclaw.BC.wall],
-    upper=[pyclaw.BC.wall, pyclaw.BC.wall]
-)
+# Gaussian hump initial condition
+x, y = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
+h_init = 2.0 * np.exp(-0.0001 * (x**2 + y**2))
+initial_condition = np.stack([h_init, np.zeros_like(h_init), np.zeros_like(h_init)], axis=0)
+solver.set_initial_condition(initial_condition)
 
 # Run
-solver.solve()
+solver.setup_solver()
+solutions = solver.solve()
+
+print(f"Generated {solutions.shape[0]} output frames")
 ```
 
 ---
 
-### Example 2: Storm Surge Simulation with Real Bathymetry
+### Example 2: Storm Surge Simulation
 
 ```python
 import numpy as np
-import clawpack.petclaw as pyclaw
-from sweSolver import sweSolver
-import utils
+import swe_simulator
+import swe_simulator.utils as sim_utils
+import functools
 
-# Initialize
-solver = sweSolver(multiple_output_times=True)
+# Configuration for Miami area
+config = swe_simulator.SimulationConfig(
+    lon_range=(-80.1865, -80.0791),
+    lat_range=(25.6678, 25.9137),
+    nx=40,
+    ny=40,
+    t_final=1000.0,
+    dt=1.0,
+    gravity=9.81,
+    bc_lower=(1, 1),
+    bc_upper=(1, 1),
+    output_dir="_output",
+    multiple_output_times=True,
+)
 
-# Domain: Miami area
-lon_range = (-80.2015, -80.0641)
-lat_range = (25.6528, 25.9287)
-solver.set_domain(lon_range=lon_range, lat_range=lat_range, nx=40, ny=40)
+# Initialize solver
+solver = swe_simulator.SWESolver(config=config)
 
-# Time: 100 seconds with 1s steps
-solver.set_time_parameters(t_final=100.0, dt=1.0)
-
-# Load real bathymetry from GEBCO data
-bathymetry_interpolator = utils.interpolate_gebco_on_grid(
-    nc_path="data/gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc"
+# Load GEBCO bathymetry
+bathymetry_interpolator = functools.partial(
+    sim_utils.interpolate_gebco_on_grid,
+    nc_path="data/gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc",
 )
 bathymetry = bathymetry_interpolator(X=solver.X_coord, Y=solver.Y_coord)
 bathymetry[np.isnan(bathymetry)] = 0.0
-solver.set_bathymetry(bathymetry_array=bathymetry)
+solver.set_bathymetry(bathymetry)
 
-# Initial condition: Tide with localized surge
-X_metric, Y_metric = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
-eta = 0.2 + 3 * np.exp(-0.00001 * ((X_metric - 3500)**2 + Y_metric**2))
-initial_condition = np.stack([eta, np.zeros_like(eta), np.zeros_like(eta)], axis=0)
-solver.set_initial_condition(initial_condition=initial_condition)
+# Initial condition: Radial dam break
+x, y = solver.mapper.coord_to_metric(solver.X_coord, solver.Y_coord)
+h_init = 0.2 + 3.0 * np.exp(-0.00001 * ((x - 3500)**2 + y**2))
+initial_condition = np.stack([h_init, np.zeros_like(h_init), np.zeros_like(h_init)], axis=0)
+solver.set_initial_condition(initial_condition)
 
-# Boundary: Mixed conditions
-solver.set_boundary_conditions(
-    lower=[pyclaw.BC.wall, pyclaw.BC.extrap],
-    upper=[pyclaw.BC.extrap, pyclaw.BC.wall]
-)
-
-# Wind forcing: Hurricane conditions
+# Hurricane wind forcing
 speed_mph = 57
-U_wind = (-1/np.sqrt(2)) * 0.44 * speed_mph
-V_wind = (1/np.sqrt(2)) * 0.44 * speed_mph
-solver.set_forcing(wind_vector=(U_wind, V_wind))
+u_wind = (-1/np.sqrt(2)) * 0.44704 * speed_mph
+v_wind = (1/np.sqrt(2)) * 0.44704 * speed_mph
+solver.set_wind_forcing(u_wind=u_wind, v_wind=v_wind)
 
 # Run
-solver.solve()
+solver.setup_solver()
+solutions = solver.solve()
+
+print(f"Simulation complete! Shape: {solutions.shape}")
 ```
 
 ---
 
-### Example 3: Visualization of Results
+### Example 3: Visualization
 
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-from sweSolver import sweSolver
-import utils
+import swe_simulator
+import swe_simulator.utils as sim_utils
 
-# ... (setup and run solver as in previous examples)
+# After running a simulation...
 
-# Read solutions
-result = utils.read_solutions(
-    outdir="_output",
-    frames_list=list(range(len(solver.claw.frames)))
-)
-
-solutions = result["solutions"][:, 0, ...]  # Extract depth component
-X_coord, Y_coord = result["meshgrid"]
-bath = result["bathymetry"]
-
-# Create animation
-fig, ax = plt.subplots(figsize=(10, 8))
-
-for i, h in enumerate(solutions):
-    ax.clear()
+# Read all solutions
+if solver.rank == 0:
+    result = sim_utils.read_solutions(
+        outdir=config.output_dir,
+        frames_list=None,  # None = all frames
+    )
     
-    # Calculate free surface elevation
-    free_surface = h + bath
-    free_surface[h < 1e-3] = np.nan  # Mask dry cells
+    solutions = result["solutions"]  # (n_frames, 3, ny, nx)
+    bathymetry = result["bathymetry"]
+    lon_grid, lat_grid = result["meshgrid"]
+    times = result["times"]
     
-    im = ax.pcolormesh(X_coord, Y_coord, free_surface, shading='auto', cmap='viridis')
-    plt.colorbar(im, ax=ax, label='Elevation (m)')
-    ax.set_xlabel('Longitude')
-    ax.set_ylabel('Latitude')
-    ax.set_title(f'Water Surface at t = {i * solver.dt:.1f}s')
-    ax.set_aspect('equal')
-    plt.pause(0.1)
-
-plt.show()
+    print(f"Read {len(solutions)} frames")
+    print(f"Time range: {times[0]:.1f} to {times[-1]:.1f} seconds")
+    
+    # Animate solution
+    swe_simulator.utils.animate_solution(
+        output_path=config.output_dir,
+        frames=None,  # all frames
+        wave_threshold=1e-2,
+        interval=100,
+        save=False,
+    )
 ```
 
 ---
 
 ## Output Format
 
-After running a simulation, the solver creates an `_output/` directory containing:
+After running a simulation, the solver creates an output directory (default: `_output/`) containing:
 
 ### Files Generated
 
-1. **`claw.pkl####`**: PyClaw solution files (pickle format)
+1. **`claw*.petsc`**: PyClaw solution files (PETSc binary format)
    - One file per output time
    - Contains state variables (depth, momentum) at that time
-   - Can be loaded with PyClaw's `Solution` class
 
 2. **`coord_meshgrid.npy`**: Grid coordinates
    - Shape: `(2, ny, nx)`
@@ -437,26 +521,29 @@ After running a simulation, the solver creates an `_output/` directory containin
    - Shape: `(ny, nx)`
    - Ocean floor depth/elevation values
 
+4. **`config.json`**: Simulation configuration (if saved)
+   - All configuration parameters in JSON format
+
 ### Reading Output Data
 
 ```python
 import numpy as np
-from clawpack.pyclaw import Solution
+import swe_simulator.utils as sim_utils
 
-# Load grid and bathymetry
-coords = np.load("_output/coord_meshgrid.npy")
-lon = coords[0, :, :]
-lat = coords[1, :, :]
-bathymetry = np.load("_output/bathymetry.npy")
+# Load saved data
+result = sim_utils.read_solutions(outdir="_output")
 
-# Load a specific solution frame
-solution = Solution()
-solution.read(frame=10, path="_output", file_format='pkl')
+# Extract arrays
+solutions = result["solutions"]    # (n_frames, 3, ny, nx)
+bathymetry = result["bathymetry"]  # (ny, nx)
+lon, lat = result["meshgrid"]      # (ny, nx) each
+times = result["times"]            # (n_frames,)
 
-# Extract variables
-h = solution.q[0, :, :]   # Water depth
-hu = solution.q[1, :, :]  # x-momentum
-hv = solution.q[2, :, :]  # y-momentum
+# Access specific frame
+frame_idx = 10
+h = solutions[frame_idx, 0, :, :]   # Water depth
+hu = solutions[frame_idx, 1, :, :]  # x-momentum
+hv = solutions[frame_idx, 2, :, :]  # y-momentum
 
 # Calculate velocities (where h > 0)
 u = np.where(h > 1e-6, hu / h, 0)
@@ -468,90 +555,276 @@ eta = h + bathymetry
 
 ---
 
+## Utilities
+
+### Reading Solutions
+
+```python
+from swe_simulator.utils import read_solutions
+
+result = read_solutions(
+    outdir="_output",
+    frames_list=None,  # None = all frames, or list of frame numbers
+    read_aux=False,    # Whether to read auxiliary variables
+)
+
+# Returns dictionary with keys:
+# - 'solutions': np.ndarray (n_frames, 3, ny, nx)
+# - 'bathymetry': np.ndarray (ny, nx)
+# - 'meshgrid': tuple (lon_grid, lat_grid)
+# - 'times': np.ndarray (n_frames,)
+# - 'frames': list of frame numbers
+```
+
+### Visualization
+
+```python
+from swe_simulator.utils import animate_solution, plot_solution
+
+# Animate all frames
+animate_solution(
+    output_path="_output",
+    frames=None,              # None = all frames, or list of frame numbers
+    wave_threshold=1e-2,      # Minimum depth to display
+    interval=100,             # Milliseconds between frames
+    save=False,               # Save to MP4 file
+)
+
+# Plot single frame
+plot_solution(
+    output_path="_output",
+    frame=10,
+    wave_threshold=1e-2,
+)
+```
+
+### Bathymetry
+
+```python
+from swe_simulator.utils import interpolate_gebco_on_grid
+
+# Load GEBCO bathymetry and interpolate to grid
+bathymetry = interpolate_gebco_on_grid(
+    X=lon_grid,
+    Y=lat_grid,
+    nc_path="data/gebco_file.nc"
+)
+
+# Handle NaN values (land or missing data)
+bathymetry[np.isnan(bathymetry)] = 0.0
+```
+
+---
+
+## Physics
+
+The solver solves the 2D shallow water equations:
+
+```
+∂h/∂t + ∂(hu)/∂x + ∂(hv)/∂y = 0
+∂(hu)/∂t + ∂(hu² + gh²/2)/∂x + ∂(huv)/∂y = -gh∂b/∂x + τˣ
+∂(hv)/∂t + ∂(huv)/∂x + ∂(hv² + gh²/2)/∂y = -gh∂b/∂y + τʸ
+```
+
+Where:
+- `h`: water depth (m)
+- `u, v`: velocity components (m/s)
+- `g`: gravitational acceleration (m/s²)
+- `b`: bathymetry (bottom topography, m)
+- `τˣ, τʸ`: wind stress terms (m²/s²)
+
+### Wind Forcing
+
+Wind stress is computed as:
+```
+τˣ = (ρₐ c_d |U| u_wind) / ρ_water
+τʸ = (ρₐ c_d |U| v_wind) / ρ_water
+```
+
+Where:
+- `ρₐ = 1.225 kg/m³`: air density
+- `ρ_water = 1000 kg/m³`: water density
+- `c_d = 1.3×10⁻³`: drag coefficient
+- `U = (u_wind, v_wind)`: wind velocity (m/s)
+
+---
+
 ## Tips and Best Practices
 
 ### 1. Grid Resolution
 
 - **Start coarse**: Begin with `nx=40, ny=40` for testing
-- **Refine gradually**: Double resolution to see convergence
+- **Refine gradually**: Double resolution to check convergence
 - **Memory consideration**: Memory usage scales as `O(nx * ny)`
+- **Typical values**: 40-200 cells per dimension
 
 ### 2. Time Step Selection
 
-- **CFL condition**: `dt` should satisfy the Courant-Friedrichs-Lewy condition
+- **CFL condition**: `dt` should satisfy Courant-Friedrichs-Lewy condition
 - **Rule of thumb**: `dt ≤ min(dx, dy) / sqrt(g * max_depth)`
-- **Start conservative**: Use smaller `dt` initially
+- **Start conservative**: Use smaller `dt` initially (0.5-1.0 seconds)
+- **Adaptive stepping**: Solver can adjust `dt` automatically (controlled by `cfl_desired`)
 
 ### 3. Boundary Conditions
 
-- **Ocean boundaries**: Use `extrap` for open ocean boundaries
-- **Coast/walls**: Use `wall` for solid boundaries
-- **Avoid artifacts**: Match physical boundaries to BC types
+- **Ocean boundaries**: Use `1` for open ocean boundaries
+- **Coast/walls**: Use `0` for solid boundaries (coastline, islands)
+- **Periodic**: Use `'2'` for periodic domains (rarely used)
+- **Mixed conditions**: Different BCs on different edges
 
 ### 4. Initial Conditions
 
-- **Dry cells**: Set `eta <= bathymetry` for initially dry regions
+- **Positive depths**: Ensure `h ≥ 0` everywhere
 - **Smooth transitions**: Avoid discontinuities in initial conditions
 - **Balance**: Ensure momentum is consistent with water depth
+- **Dry regions**: Set `h = 0` for initially dry land
 
 ### 5. Wind Forcing
 
 - **Units**: Wind velocities in m/s
-- **Direction convention**: 
-  - U > 0: Eastward wind
-  - V > 0: Northward wind
-- **Magnitude**: Typical values 5-30 m/s for storms
+- **Direction convention**:
+  - `u > 0`: Eastward wind
+  - `v > 0`: Northward wind
+- **Magnitude**: Typical values:
+  - Light breeze: 5-10 m/s
+  - Strong winds: 15-25 m/s
+  - Hurricane: 30-70 m/s
 
 ### 6. Coordinate Systems
 
-- **Access grids**: Use `solver.X_coord`, `solver.Y_coord` for lon/lat
-- **Metric space**: Use `solver.mapper.coord_to_metric()` for distances
-- **Grid alignment**: Arrays are in `(ny, nx)` order (row-major)
+- **Geographic coordinates**: `X_coord`, `Y_coord` in degrees
+- **Metric coordinates**: Use `mapper.coord_to_metric()` for distances
+- **Array ordering**: Always `(ny, nx)` (row-major, latitude × longitude)
+- **Bathymetry convention**: Negative = depth, Positive = elevation
 
 ### 7. MPI Parallelization
 
 ```bash
-# Run with MPI
-mpirun -n 4 python your_script.py
+# Run with MPI (4 processes)
+mpiexec -n 4 python your_script.py
 ```
 
 - Automatically parallelized if MPI is available
-- Check rank with `solver.rank` for rank-specific operations
-- Only rank 0 should do I/O operations
+- Check `solver.rank` for rank-specific operations
+- Only rank 0 should do I/O and visualization
+- Load balancing handled by PyClaw
 
 ### 8. Debugging
 
+- **Validate config**: Call `config.validate()` explicitly
 - **Check array shapes**: Verify `(ny, nx)` or `(3, ny, nx)` dimensions
-- **Validate configuration**: Errors are raised before solving
-- **Inspect output**: Check `pyclaw.log` for solver details
-- **Visualize bathymetry**: Plot bathymetry before running simulation
+- **Inspect bathymetry**: Plot before running simulation
+- **Start simple**: Test with flat bathymetry and simple initial conditions
+- **Check for NaN**: Validate bathymetry and initial condition arrays
 
 ### 9. Performance Optimization
 
 - **Reduce output**: Set `multiple_output_times=False` for final state only
-- **Optimize nx/ny**: Balance accuracy vs. computation time
-- **Use appropriate dt**: Larger stable dt = faster simulation
+- **Increase frame_interval**: Output less frequently
+- **Optimize grid**: Balance accuracy vs. computation time
+- **Use MPI**: Parallelize for large domains
+- **Larger dt**: Use largest stable time step
 
 ---
 
-## Error Messages
+## Troubleshooting
 
 ### Common Errors and Solutions
 
-**"Domain not set. Call set_domain() first."**
-- Solution: Call `solver.set_domain()` before `setup_solver()` or `solve()`
+**"Configuration validation failed"**
+- Check that all required parameters are set
+- Ensure `lon_range[0] < lon_range[1]`
+- Ensure `lat_range[0] < lat_range[1]`
+- Ensure `nx, ny > 0`
+- Ensure `t_final > dt > 0`
 
-**"Initial condition not set. Call set_initial_condition() first."**
-- Solution: Call `solver.set_initial_condition()` with proper array
+**"Bathymetry shape does not match grid dimensions"**
+- Ensure bathymetry shape is `(ny, nx)`, not `(nx, ny)`
+- Match `config.ny` and `config.nx` exactly
 
-**"Bathymetry not set. Call set_bathymetry() first."**
-- Solution: Call `solver.set_bathymetry()` with bathymetry array
+**"Initial condition shape does not match expected shape"**
+- Ensure shape is `(3, ny, nx)`: `[h, hu, hv]`
+- First dimension must be 3 (water depth, x-momentum, y-momentum)
 
-**"Bathymetry array must match grid dimensions"**
-- Solution: Ensure bathymetry shape is `(ny, nx)`, not `(nx, ny)`
+**"Initial condition contains NaN values"**
+- Check for NaN in input arrays
+- Handle NaN in bathymetry before creating initial condition
 
-**"Initial condition array must match grid dimensions"**
-- Solution: Ensure initial condition shape is `(3, ny, nx)`
+**"Initial water depth contains negative values"**
+- Ensure all `h >= 0` in initial condition
+- Dry areas should have `h = 0`, not negative
+
+**ImportError: No module named 'clawpack'**
+```bash
+pip install clawpack
+```
+
+**MPI errors**
+```bash
+# Ensure mpi4py is installed correctly
+pip install --upgrade mpi4py
+```
+
+**Memory issues with large grids**
+- Use MPI parallelization: `mpiexec -n 4 python script.py`
+- Reduce `nx`, `ny` values
+- Reduce `num_output_times` or increase `frame_interval`
+
+**Visualization not working**
+```bash
+# Install matplotlib and cartopy
+pip install matplotlib
+conda install cartopy  # Recommended method
+```
+
+**Simulation unstable (NaN or Inf in output)**
+- Reduce `dt` (time step too large)
+- Check initial conditions for discontinuities
+- Verify bathymetry data is reasonable
+- Check CFL condition: reduce `cfl_desired`
+
+---
+
+## Project Structure
+
+```
+swe_simulator/
+├── __init__.py              # Package exports
+├── config.py                # SimulationConfig dataclass
+├── solver.py                # SWESolver main class
+├── forcing.py               # WindForcing class
+├── coordinate_mapper.py     # Geographic coordinate transformations
+├── exceptions.py            # Custom exceptions
+├── utils/
+│   ├── __init__.py
+│   ├── bathymetry.py        # Bathymetry utilities
+│   ├── grid.py              # Grid generation
+│   ├── io.py                # Input/output functions
+│   ├── validation.py        # Validation utilities
+│   └── visualization.py     # Plotting functions
+
+examples/
+├── test_sweSolver.py        # Storm surge simulation example
+└── simple_gaussian.py       # Simple wave example
+
+data/
+└── gebco_*.nc               # GEBCO bathymetry NetCDF files
+```
+
+---
+
+## Data Requirements
+
+### GEBCO Bathymetry Data
+
+Download bathymetry data from [GEBCO](https://www.gebco.net/):
+
+1. Go to https://www.gebco.net/data_and_products/gridded_bathymetry_data/
+2. Select your region of interest
+3. Download as NetCDF format
+4. Place in `data/` directory
+
+Example filename: `gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc`
 
 ---
 
@@ -560,16 +833,39 @@ mpirun -n 4 python your_script.py
 - **Clawpack**: http://www.clawpack.org/
 - **PyClaw Documentation**: http://www.clawpack.org/pyclaw/
 - **Shallow Water Equations**: Classical 2D SWE with bathymetry
-- **Riemann Solver**: Uses `sw_aug_2D` (augmented shallow water)
+- **Riemann Solver**: Uses `shallow_roe_with_efix_2D`
+- LeVeque, R. J. (2002). *Finite Volume Methods for Hyperbolic Problems*
+- GEBCO Bathymetric Data: https://www.gebco.net/
 
 ---
 
 ## License
 
-This documentation is provided as-is for the sweSolver class.
+MIT License - see LICENSE file for details.
+
+---
+
+## Citation
+
+If you use this code in your research, please cite:
+
+```bibtex
+@software{swe_simulator,
+  author = {Your Name},
+  title = {SWE Simulator: 2D Shallow Water Equations Solver},
+  year = {2025},
+  url = {https://github.com/yourusername/swe_simulator}
+}
+```
 
 ---
 
 ## Contact & Support
 
-For issues, questions, or contributions, please refer to the project repository or contact the development team.
+- **GitHub**: https://github.com/yourusername/swe_simulator
+- **Issues**: https://github.com/yourusername/swe_simulator/issues
+- **Email**: your.email@example.com
+
+---
+
+**Last Updated**: January 2025

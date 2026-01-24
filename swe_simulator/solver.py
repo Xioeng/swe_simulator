@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 import os
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import clawpack.petclaw as pyclaw
 import numpy as np
@@ -36,16 +36,14 @@ class SWESolver:
         self.config = config or SimulationConfig()
         self.wind_forcing: WindForcing = WindForcing()
         # Arrays
-        self.bathymetry_array: Optional[np.ndarray] = None
-        self.initial_condition_array: Optional[np.ndarray] = None
+        self.bathymetry_array: np.ndarray = np.zeros((self.config.ny, self.config.nx))
+        self.initial_condition_array: np.ndarray = np.zeros(
+            (3, self.config.ny, self.config.nx)
+        )
 
         # MPI
         self.comm: MPI.Comm = MPI.COMM_WORLD
         self.rank: int = self.comm.Get_rank()
-
-        self.mapper: Optional[GeographicCoordinateMapper] = None
-        # Internal state
-        self.claw: Optional[pyclaw.Controller] = None
 
         if self.config.lon_range is not None and self.config.lat_range is not None:
             print("setting domain in init")
@@ -115,6 +113,20 @@ class SWESolver:
         )
         self.X_coord, self.Y_coord = self.mapper.metric_to_coord(self.X, self.Y)
 
+    def _check_arrays_sanity_set(
+        self, array: np.ndarray, expected_shape: Tuple[int, ...], name: str
+    ):
+        errors = []
+        if array is None:
+            errors.append(f"{name} has not been set.")
+            return errors
+        """Check if a required array has the correct shape."""
+        if array.shape != expected_shape:
+            errors.append(
+                f"{name} has incorrect shape. Expected {expected_shape}, got {array.shape}."
+            )
+        return errors
+
     def set_bathymetry(self, bathymetry_array: np.ndarray):
         """
         Set the bathymetry for the domain.
@@ -124,10 +136,6 @@ class SWESolver:
         bathymetry_array : np.ndarray
             Array of shape (ny, nx) with bathymetry values
         """
-        assert bathymetry_array.shape == (
-            self.config.ny,
-            self.config.nx,
-        ), "Bathymetry array must match grid dimensions"
         self.bathymetry_array = bathymetry_array
 
     def set_initial_condition(self, initial_condition: np.ndarray):
@@ -139,22 +147,17 @@ class SWESolver:
         initial_condition : np.ndarray
             Array of shape (3, ny, nx) with [h, hu, hv]
         """
-        assert initial_condition.shape == (
-            3,
-            self.config.ny,
-            self.config.nx,
-        ), "Initial condition array must match grid dimensions"
         self.initial_condition_array = initial_condition
 
-    def set_boundary_conditions(self, lower: List[int], upper: List[int]):
+    def set_boundary_conditions(self, lower: Tuple[int, int], upper: Tuple[int, int]):
         """
         Set boundary conditions.
 
         Parameters
         ----------
-        lower : List[int]
+        lower : Tuple[int, int]
             BCs for x-lower and y-lower [x_lo, y_lo]
-        upper : List[int]
+        upper : Tuple[int, int]
             BCs for x-upper and y-upper [x_hi, y_hi]
         """
         self.config.bc_lower = lower
@@ -180,22 +183,26 @@ class SWESolver:
         """
         self.wind_forcing = WindForcing(u_wind=u_wind, v_wind=v_wind, c_d=c_d)
 
-    def _validate_configuration(self):
+    def _validate_swe_configuration(self):
         """Validate that all required configuration has been set."""
-        self.config.validate()
-        self.set_domain(
-            self.config.lon_range,
-            self.config.lat_range,
-            self.config.nx,
-            self.config.ny,
-        )
 
-        if self.bathymetry_array is None:
-            raise ValueError("Bathymetry array has not been set.")
-        if self.initial_condition_array is None:
-            raise ValueError("Initial condition array has not been set.")
-        if self.mapper is None:
-            raise ValueError("Domain has not been set. Call set_domain() first.")
+        errors = []
+        for array, shape, name in [
+            (
+                self.bathymetry_array,
+                (self.config.ny, self.config.nx),
+                "Bathymetry array",
+            ),
+            (
+                self.initial_condition_array,
+                (3, self.config.ny, self.config.nx),
+                "Initial condition array",
+            ),
+        ]:
+            errors.extend(self._check_arrays_sanity_set(array, shape, name))
+
+        if errors:
+            raise ValueError("SWE configuration errors found:\n" + "\n".join(errors))
 
     def _initialize_solution_state(self, state):
         """Initialize the solution state with initial conditions."""
@@ -227,7 +234,7 @@ class SWESolver:
         pyclaw.Controller
             Configured PyClaw controller
         """
-        self._validate_configuration()
+        self._validate_swe_configuration()
 
         # Create solver
         rs = riemann.sw_aug_2D
@@ -267,7 +274,11 @@ class SWESolver:
         # Setup controller
         claw = pyclaw.Controller()
         claw.tfinal = self.config.t_final
-        claw.solution = pyclaw.Solution(state, domain, outdir=self.config.output_dir)
+        claw.solution = pyclaw.Solution(state, domain)
+        if self.config.output_dir:
+            claw.outdir = self.config.output_dir
+        else:
+            claw.output_format = None
         claw.solver = solver
 
         # Output times
@@ -284,34 +295,7 @@ class SWESolver:
         """Run the simulation."""
         if self.claw is None:
             self.setup_solver()
-        return self.claw.run()
+        self.claw.run()
 
-
-if __name__ == "__main__":
-    # Example usage
-    solver = SWESolver()
-    solver.set_time_parameters(t_final=10.0, dt=0.5)
-    solver.set_domain(lon_range=(-10, 10), lat_range=(-10, 10), nx=100, ny=100)
-
-    # Bathymetry: flat sea floor at -10m
-    bathymetry = -10 * np.ones((solver.ny, solver.nx))
-    solver.set_bathymetry(bathymetry)
-
-    # Initial condition: Gaussian hump
-    x = np.linspace(-10, 10, solver.nx)
-    y = np.linspace(-10, 10, solver.ny)
-    X, Y = np.meshgrid(x, y)
-    h_init = 5.0 * np.exp(-0.1 * (X**2 + Y**2))
-    initial_condition = np.array([h_init, np.zeros_like(h_init), np.zeros_like(h_init)])
-    solver.set_initial_condition(initial_condition)
-
-    solver.set_boundary_conditions(
-        lower=[pyclaw.BC.wall, pyclaw.BC.wall], upper=[pyclaw.BC.wall, pyclaw.BC.wall]
-    )
-
-    # Set wind forcing
-    solver.set_wind_forcing(u_wind=10.0, v_wind=5.0)
-    # Or use meteorological convention:
-    # solver.set_wind_from_speed_direction(speed=15.0, direction_deg=45)
-
-    solver.solve()
+        solutions = np.stack([frame.q for frame in self.claw.frames])
+        return solutions

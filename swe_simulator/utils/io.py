@@ -88,12 +88,6 @@ def load_bathymetry_and_meshgrid(
     ValueError
         If loaded data has unexpected format
 
-    Examples
-    --------
-    >>> bathymetry, (X, Y) = load_bathymetry_and_meshgrid("_output")
-    >>> print(f"Bathymetry range: {bathymetry.min():.2f} to {bathymetry.max():.2f}m")
-    >>> print(f"Grid shape: {X.shape}")
-
     Notes
     -----
     This function expects the output directory to contain:
@@ -230,9 +224,10 @@ def read_solutions(
     for i, frame_num in enumerate(frames_list):
         try:
             # Read solution
-            sol = pyclaw.Solution(
+            sol = pyclaw.Solution()
+            sol.read(
                 frame_num,
-                outdir=str(outdir),
+                path=str(outdir),
                 file_prefix="claw",
                 file_format="petsc",
                 read_aux=read_aux,

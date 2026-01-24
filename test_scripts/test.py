@@ -1,13 +1,16 @@
 import numpy as np
 from clawpack import pyclaw
 
-outdir = "../_output"
+outdir = "./_outputs"
 frames = range(1000)  # or range(N) if you have more
 
 solutions = []
 for f in frames:
     sol = pyclaw.Solution(
-        f, outdir=outdir, file_prefix="claw", file_format="petsc", read_aux=False
+        # f, file_prefix="claw", file_format="petsc", read_aux=False
+    )
+    sol.read(
+        f, path=outdir, file_prefix="claw", file_format="petsc", read_aux=False
     )  # read frame f from outdir
     solutions.append(sol.q.copy())  # (num_eqn, nx, ny)
 

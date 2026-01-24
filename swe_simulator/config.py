@@ -48,20 +48,35 @@ class SimulationConfig:
         Boundary conditions for upper boundaries (x, y)
     """
 
+    # Domain parameters
     lon_range: Optional[Tuple[float, float]] = None
     lat_range: Optional[Tuple[float, float]] = None
-    nx: Optional[int] = None
-    ny: Optional[int] = None
-    t_final: Optional[float] = None
-    dt: Optional[float] = None
+    nx: int = 100
+    ny: int = 100
+
+    # Time parameters
+    t_final: float = 10.0
+    dt: float = 0.1
+
+    # Physical parameters
     gravity: float = 9.81
+
+    # Output parameters
     output_dir: str = "_output"
     frame_interval: int = 1
+    multiple_output_times: bool = False
+
+    # Numerical parameters
     cfl_desired: float = 0.9
     cfl_max: float = 1.0
-    multiple_output_times: bool = False
-    bc_lower: Tuple[int, int] = (pyclaw.BC.wall, pyclaw.BC.wall)
-    bc_upper: Tuple[int, int] = (pyclaw.BC.wall, pyclaw.BC.wall)
+
+    # Boundary conditions
+    bc_lower: Tuple[pyclaw.BC, pyclaw.BC] = (pyclaw.BC.wall, pyclaw.BC.wall)
+    bc_upper: Tuple[pyclaw.BC, pyclaw.BC] = (pyclaw.BC.wall, pyclaw.BC.wall)
+
+    def __post_init__(self) -> None:
+        """Post-initialization processing."""
+        self.validate()
 
     def validate(self) -> None:
         """Validate configuration parameters."""
@@ -100,6 +115,19 @@ class SimulationConfig:
             errors.append("cfl_max must be in (0, 1]")
         if self.cfl_desired > self.cfl_max:
             errors.append("cfl_desired must be <= cfl_max")
+
+        # Boundary conditions
+        if len(self.bc_lower) != 2 or any(
+            bc not in (pyclaw.BC.wall, pyclaw.BC.extrap, pyclaw.BC.periodic)
+            for bc in self.bc_lower
+        ):
+            errors.append("bc_lower must be a tuple of (x, y) boundary conditions")
+
+        if len(self.bc_upper) != 2 or any(
+            bc not in (pyclaw.BC.wall, pyclaw.BC.extrap, pyclaw.BC.periodic)
+            for bc in self.bc_upper
+        ):
+            errors.append("bc_upper must be a tuple of (x, y) boundary conditions")
 
         # Output
         if self.frame_interval <= 0:
@@ -167,6 +195,16 @@ class SimulationConfig:
             data["bc_lower"] = tuple(data["bc_lower"])
         if "bc_upper" in data:
             data["bc_upper"] = tuple(data["bc_upper"])
+        if "multiple_output_times" in data:
+            data["multiple_output_times"] = bool(data["multiple_output_times"])
+        if "nx" in data and data["nx"] is not None:
+            data["nx"] = int(data["nx"])
+        if "ny" in data and data["ny"] is not None:
+            data["ny"] = int(data["ny"])
+        if "frame_interval" in data:
+            data["frame_interval"] = int(data["frame_interval"])
+        if "multiple_output_times" in data:
+            data["multiple_output_times"] = bool(data["multiple_output_times"])
 
         logger.info(f"Configuration loaded from {filepath}")
         return cls(**data)
@@ -178,5 +216,11 @@ class SimulationConfig:
         lines.append(f"  Grid: nx={self.nx}, ny={self.ny}")
         lines.append(f"  Time: t_final={self.t_final}s, dt={self.dt}s")
         lines.append(f"  Gravity: {self.gravity} m/s²")
-        lines.append(f"  Output: {self.output_dir}")
+        lines.append(f"  Output Directory: {self.output_dir}")
+        lines.append(f"  Frame Interval: {self.frame_interval}")
+        lines.append(f"  Multiple Output Times: {self.multiple_output_times}")
+        lines.append(f"  CFL Desired: {self.cfl_desired}")
+        lines.append(f"  CFL Max: {self.cfl_max}")
+        lines.append(f"  Boundary Conditions Lower: {self.bc_lower}")
+        lines.append(f"  Boundary Conditions Upper: {self.bc_upper}")
         return "\n".join(lines)

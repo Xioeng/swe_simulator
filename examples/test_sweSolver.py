@@ -13,9 +13,12 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
+import logging
+
 import swe_simulator
 import swe_simulator.utils as sim_utils
 
+logger = logging.getLogger(__name__)
 # Helper functions for bathymetry and initial conditions
 # ============================================================================
 
@@ -96,7 +99,7 @@ def test_radial_dam_break() -> None:
         nx=40,
         ny=40,
         # Time
-        t_final=1000.0,  # seconds
+        t_final=10.0,  # seconds
         dt=1.0,  # seconds
         # Physics
         gravity=9.81,
@@ -104,7 +107,7 @@ def test_radial_dam_break() -> None:
         bc_lower=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         bc_upper=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         # Output
-        output_dir="_output",
+        output_dir="_outputs",
         multiple_output_times=True,  # Will use t_final/dt
     )
 
@@ -158,7 +161,7 @@ def test_radial_dam_break() -> None:
     # Set Initial Condition
     # ========================================================================
 
-    print("Setting initial condition...", solver.mapper)
+    print("Setting initial condition...")
     # Get metric coordinates for initial condition
 
     # Getting initial condition on solver grid
@@ -173,7 +176,7 @@ def test_radial_dam_break() -> None:
         f"max={initial_surface[0].max():.2f}m"
     )
 
-    print("Boundary conditions: lower=[wall, extrap], upper=[extrap, wall]")
+    print(f"Boundary conditions: lower={config.bc_lower}, upper={config.bc_upper}")
 
     # ========================================================================
     # Set Wind Forcing
@@ -190,19 +193,19 @@ def test_radial_dam_break() -> None:
     solver.setup_solver()
 
     print("Running simulation...")
-    solver.solve()
+    solutions = solver.solve()  # If the solutions are needed for post-processing
 
-    print(f"\nSimulation complete!")
+    print(f"\nSimulation complete! solution tensor (T, 3, nx, ny): {solutions.shape}")
     print(f"Last dt used: {solver.config.dt}")
 
     # ========================================================================
     # Visualize Results (only on rank 0 for MPI)
     # ========================================================================
 
-    if solver.rank == 0:
+    if solver.rank == 0 and solver.config.output_dir is not None:
         swe_simulator.utils.animate_solution(
-            output_path="_output",
-            frames=range(0, swe_simulator.utils.get_frame_count("_output")),
+            output_path=solver.config.output_dir,
+            frames=None,  # It means all frames
             wave_treshold=1e-2,
             interval=100,
             save=False,
