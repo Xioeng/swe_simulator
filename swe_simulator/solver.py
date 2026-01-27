@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import logging
 import os
 from typing import Optional, Tuple
 
@@ -18,7 +19,11 @@ from mpi4py import MPI
 from .config import SimulationConfig
 from .coordinate_mapper import GeographicCoordinateMapper
 from .forcing import WindForcing
+from .logging_config import get_logger
+from .result import SWEResult
 from .utils.grid import generate_cell_centers
+
+logger = get_logger(__name__)
 
 
 class SWESolver:
@@ -31,7 +36,10 @@ class SWESolver:
         Whether to output at multiple time steps
     """
 
-    def __init__(self, config: Optional[SimulationConfig] = None):
+    def __init__(
+        self,
+        config: Optional[SimulationConfig] = None,
+    ) -> None:
         # Simulation parameters
         self.config = config or SimulationConfig()
         self.wind_forcing: WindForcing = WindForcing()
@@ -46,7 +54,7 @@ class SWESolver:
         self.rank: int = self.comm.Get_rank()
 
         if self.config.lon_range is not None and self.config.lat_range is not None:
-            print("setting domain in init")
+            logger.info("Setting domain in init")
             self.set_domain(
                 self.config.lon_range,
                 self.config.lat_range,
@@ -54,7 +62,7 @@ class SWESolver:
                 self.config.ny,
             )
 
-    def set_time_parameters(self, t_final: float, dt: float):
+    def set_time_parameters(self, t_final: float, dt: float) -> None:
         """
         Set the time parameters for the simulation.
 
@@ -74,7 +82,7 @@ class SWESolver:
         lat_range: Tuple[float, float],
         nx: int,
         ny: int,
-    ):
+    ) -> None:
         """
         Set up the grid domain based on longitude and latitude ranges.
 
@@ -115,7 +123,7 @@ class SWESolver:
 
     def _check_arrays_sanity_set(
         self, array: np.ndarray, expected_shape: Tuple[int, ...], name: str
-    ):
+    ) -> list:
         errors = []
         if array is None:
             errors.append(f"{name} has not been set.")
@@ -127,7 +135,7 @@ class SWESolver:
             )
         return errors
 
-    def set_bathymetry(self, bathymetry_array: np.ndarray):
+    def set_bathymetry(self, bathymetry_array: np.ndarray) -> None:
         """
         Set the bathymetry for the domain.
 
@@ -138,7 +146,7 @@ class SWESolver:
         """
         self.bathymetry_array = bathymetry_array
 
-    def set_initial_condition(self, initial_condition: np.ndarray):
+    def set_initial_condition(self, initial_condition: np.ndarray) -> None:
         """
         Set the initial condition.
 
@@ -149,7 +157,9 @@ class SWESolver:
         """
         self.initial_condition_array = initial_condition
 
-    def set_boundary_conditions(self, lower: Tuple[int, int], upper: Tuple[int, int]):
+    def set_boundary_conditions(
+        self, lower: Tuple[int, int], upper: Tuple[int, int]
+    ) -> None:
         """
         Set boundary conditions.
 
@@ -168,7 +178,7 @@ class SWESolver:
         u_wind: float = 0.0,
         v_wind: float = 0.0,
         c_d: float = 1.3e-3,
-    ):
+    ) -> None:
         """
         Set wind forcing parameters.
 
@@ -183,7 +193,7 @@ class SWESolver:
         """
         self.wind_forcing = WindForcing(u_wind=u_wind, v_wind=v_wind, c_d=c_d)
 
-    def _validate_swe_configuration(self):
+    def _validate_swe_configuration(self) -> None:
         """Validate that all required configuration has been set."""
 
         errors = []
@@ -202,21 +212,15 @@ class SWESolver:
             errors.extend(self._check_arrays_sanity_set(array, shape, name))
 
         if errors:
+            logger.error("SWE configuration errors found:\n" + "\n".join(errors))
             raise ValueError("SWE configuration errors found:\n" + "\n".join(errors))
 
-    def _initialize_solution_state(self, state):
+    def _initialize_solution_state(self, state) -> None:
         """Initialize the solution state with initial conditions."""
         # Ensure output directory exists
-        if not os.path.exists(self.config.output_dir) and self.rank == 0:
-            os.makedirs(self.config.output_dir)
-
-        # Save grid metadata
-        if self.rank == 0:
-            np.save(
-                f"{self.config.output_dir}/coord_meshgrid.npy",
-                np.stack((self.X_coord, self.Y_coord), axis=0),
-            )
-            np.save(f"{self.config.output_dir}/bathymetry.npy", self.bathymetry_array)
+        if self.config.output_dir and self.rank == 0:
+            if not os.path.exists(self.config.output_dir):
+                os.makedirs(self.config.output_dir)
 
         # Set state
         h = np.maximum(0.0, self.initial_condition_array[0] - self.bathymetry_array)
@@ -256,6 +260,7 @@ class SWESolver:
 
         # Set wind forcing if configured
         if self.wind_forcing is not None:
+            logger.info("Applying wind forcing to solver")
             solver.step_source = self.wind_forcing  # Use the callable instance
             solver.source_split = 2
 
@@ -288,14 +293,23 @@ class SWESolver:
             claw.num_output_times = 1
 
         claw.keep_copy = True
+        claw.verbosity = 0
         self.claw = claw
+
         return claw
 
-    def solve(self):
+    def solve(self) -> SWEResult:
         """Run the simulation."""
         if self.claw is None:
             self.setup_solver()
         self.claw.run()
 
         solutions = np.stack([frame.q for frame in self.claw.frames])
-        return solutions
+        result = SWEResult(
+            solution=solutions,
+            bathymetry=self.bathymetry_array,
+            initial_condition=self.initial_condition_array,
+            wind_forcing=self.wind_forcing,
+            config=self.config,
+        )
+        return result

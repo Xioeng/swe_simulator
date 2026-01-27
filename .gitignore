@@ -1,2 +1,4 @@
 _*
-!__init__.py
+!*.py
+*.log
+!.gitignore

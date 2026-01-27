@@ -1,7 +1,5 @@
 """Wind forcing and source terms for shallow water equations."""
 
-import logging
-
 import numpy as np
 from clawpack.riemann.shallow_roe_with_efix_2D_constants import (
     depth,
@@ -9,7 +7,9 @@ from clawpack.riemann.shallow_roe_with_efix_2D_constants import (
     y_momentum,
 )
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class WindForcing:
@@ -37,13 +37,13 @@ class WindForcing:
         c_d: float = 1.3e-3,
         rho_air: float = 1.2,
         rho_water: float = 1000.0,
-    ):
+    ) -> None:
         self.u_wind = u_wind
         self.v_wind = v_wind
         self.c_d = c_d
         self.rho_air = rho_air
         self.rho_water = rho_water
-
+        print("gggggg", logger)
         logger.debug(
             f"WindForcing initialized: u={u_wind:.2f} m/s, v={v_wind:.2f} m/s, "
             f"C_D={c_d:.2e}"

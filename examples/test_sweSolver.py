@@ -18,7 +18,10 @@ import logging
 import swe_simulator
 import swe_simulator.utils as sim_utils
 
-logger = logging.getLogger(__name__)
+logger = swe_simulator.logging_config.setup_logging(
+    logging.DEBUG,
+    "swe_simulation_example.log",
+)
 # Helper functions for bathymetry and initial conditions
 # ============================================================================
 
@@ -99,7 +102,7 @@ def test_radial_dam_break() -> None:
         nx=40,
         ny=40,
         # Time
-        t_final=1000.0,  # seconds
+        t_final=10.0,  # seconds
         dt=1.0,  # seconds
         # Physics
         gravity=9.81,
@@ -107,7 +110,7 @@ def test_radial_dam_break() -> None:
         bc_lower=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         bc_upper=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         # Output
-        output_dir="_outputs",
+        output_dir=None,
         multiple_output_times=True,  # Will use t_final/dt
     )
 
@@ -137,9 +140,7 @@ def test_radial_dam_break() -> None:
     #     upper=(pyclaw.BC.extrap, pyclaw.BC.wall),  # [x_upper, y_upper]
     # )
 
-    print(f"Domain: lon={config.lon_range}, lat={config.lat_range}")
-    print(f"Grid: {config.nx}x{config.ny} cells")
-    print(f"Time: t_final={config.t_final}s, dt={config.dt}s")
+    print(f"Config:\n {config}")
 
     # ========================================================================
     # Set Bathymetry
@@ -189,14 +190,15 @@ def test_radial_dam_break() -> None:
     # Setup and Run Solver
     # ========================================================================
 
-    print("\nSetting up solver...")
+    print("Setting up solver...")
     solver.setup_solver()
 
     print("Running simulation...")
-    solutions = solver.solve()  # If the solutions are needed for post-processing
+    result = solver.solve()  # If the solutions are needed for post-processing
 
-    print(f"\nSimulation complete! solution tensor (T, 3, nx, ny): {solutions.shape}")
-    print(f"Last dt used: {solver.config.dt}")
+    print(
+        f"\nSimulation complete! solution tensor (T+1, 3, nx, ny): {result.solution.shape}"
+    )
 
     # ========================================================================
     # Visualize Results (only on rank 0 for MPI)

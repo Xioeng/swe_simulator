@@ -6,13 +6,14 @@ for common data issues like NaN values, infinite values, and
 incorrect shapes.
 """
 
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
 
-logger = logging.getLogger(__name__)
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def validate_array_shape(

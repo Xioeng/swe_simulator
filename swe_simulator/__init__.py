@@ -6,6 +6,7 @@ from . import (
     exceptions,
     forcing,
     logging_config,
+    result,
     solver,
     utils,
 )
@@ -18,4 +19,5 @@ __all__ = [
     "logging_config",
     "solver",
     "utils",
+    "result",
 ]

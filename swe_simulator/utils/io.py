@@ -8,7 +8,6 @@ This module provides functions for:
 - Managing output directories
 """
 
-import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -16,7 +15,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
-logger = logging.getLogger(__name__)
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_frame_count(output_path: Union[str, Path]) -> int:

@@ -1,14 +1,15 @@
 """Configuration dataclass for SWE Simulator."""
 
 import json
-import logging
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import clawpack.petclaw as pyclaw
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -46,6 +47,8 @@ class SimulationConfig:
         Boundary conditions for lower boundaries (x, y)
     bc_upper : List[int], default=(0, 0)
         Boundary conditions for upper boundaries (x, y)
+    log_level : int, default=logging.INFO
+        Logging level
     """
 
     # Domain parameters

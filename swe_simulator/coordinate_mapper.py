@@ -1,12 +1,13 @@
 """Coordinate mapping between geographic and metric coordinates."""
 
-import logging
 from typing import Union
 
 import numpy as np
 import numpy.typing as npt
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class GeographicCoordinateMapper:

@@ -7,7 +7,6 @@ This module provides functions for:
 - Building reusable interpolators
 """
 
-import logging
 from pathlib import Path
 from typing import Dict, Optional, Union
 
@@ -15,7 +14,9 @@ import numpy as np
 import numpy.typing as npt
 from scipy.interpolate import RegularGridInterpolator
 
-logger = logging.getLogger(__name__)
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_gebco_data(nc_path: Union[str, Path]) -> Dict[str, npt.NDArray[np.float64]]:

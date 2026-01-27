@@ -7,7 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from ..logging_config import get_logger
 from .io import load_bathymetry_and_meshgrid, read_solutions
+
+logger = get_logger(__name__)
 
 
 def normalize_velocities_for_plotting(
