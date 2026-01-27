@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 bathymetry_interpolator = functools.partial(
-    sim_utils.interpolate_gebco_on_grid,
+    sim_utils.bathymetry.interpolate_gebco_on_grid,
     nc_path="data/gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc",
 )
 
@@ -92,14 +92,14 @@ def test_radial_dam_break() -> None:
     v_wind = (1 / np.sqrt(2)) * 0.44 * speed_florida  # m/s
 
     # Create configuration
-    config = swe_simulator.SimulationConfig(
+    config = swe_simulator.config.SimulationConfig(
         # Domain
         lon_range=lon_range,
         lat_range=lat_range,
         nx=40,
         ny=40,
         # Time
-        t_final=10.0,  # seconds
+        t_final=1000.0,  # seconds
         dt=1.0,  # seconds
         # Physics
         gravity=9.81,
@@ -121,7 +121,7 @@ def test_radial_dam_break() -> None:
     # ========================================================================
 
     print("Initializing SWESolver...")
-    solver = swe_simulator.SWESolver(config=config)
+    solver = swe_simulator.solver.SWESolver(config=config)
     # solver._validate_configuration()
 
     # # You can set domain individually if desired as
@@ -203,7 +203,7 @@ def test_radial_dam_break() -> None:
     # ========================================================================
 
     if solver.rank == 0 and solver.config.output_dir is not None:
-        swe_simulator.utils.animate_solution(
+        sim_utils.visualization.animate_solution(
             output_path=solver.config.output_dir,
             frames=None,  # It means all frames
             wave_treshold=1e-2,

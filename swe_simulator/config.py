@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import clawpack.petclaw as pyclaw
 
@@ -49,8 +49,8 @@ class SimulationConfig:
     """
 
     # Domain parameters
-    lon_range: Optional[Tuple[float, float]] = None
-    lat_range: Optional[Tuple[float, float]] = None
+    lon_range: Tuple[float, float] = None
+    lat_range: Tuple[float, float] = None
     nx: int = 100
     ny: int = 100
 
@@ -187,22 +187,16 @@ class SimulationConfig:
             data = json.load(f)
 
         # Convert lists to tuples
-        if "lon_range" in data and data["lon_range"] is not None:
-            data["lon_range"] = tuple(data["lon_range"])
-        if "lat_range" in data and data["lat_range"] is not None:
-            data["lat_range"] = tuple(data["lat_range"])
-        if "bc_lower" in data:
-            data["bc_lower"] = tuple(data["bc_lower"])
-        if "bc_upper" in data:
-            data["bc_upper"] = tuple(data["bc_upper"])
-        if "multiple_output_times" in data:
-            data["multiple_output_times"] = bool(data["multiple_output_times"])
-        if "nx" in data and data["nx"] is not None:
-            data["nx"] = int(data["nx"])
-        if "ny" in data and data["ny"] is not None:
-            data["ny"] = int(data["ny"])
-        if "frame_interval" in data:
-            data["frame_interval"] = int(data["frame_interval"])
+        # Normalize types loaded from JSON
+        for k in ("lon_range", "lat_range", "bc_lower", "bc_upper"):
+            v = data.get(k)
+            if v is not None:
+                data[k] = tuple(v)
+
+        for k in ("nx", "ny", "frame_interval"):
+            if k in data and data[k] is not None:
+                data[k] = int(data[k])
+
         if "multiple_output_times" in data:
             data["multiple_output_times"] = bool(data["multiple_output_times"])
 
