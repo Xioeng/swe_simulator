@@ -16,6 +16,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ..logging_config import get_logger
+from ..result import SWEResult
 
 logger = get_logger(__name__)
 
@@ -204,7 +205,8 @@ def read_solutions(
     logger.info(f"Reading solutions from {outdir}")
 
     # Load bathymetry and meshgrid
-    bathymetry, meshgrid = load_bathymetry_and_meshgrid(outdir)
+    result = SWEResult().load(outdir.joinpath("result.pkl"))
+    bathymetry, meshgrid = result.bathymetry, result.meshgrid
 
     # Determine which frames to read
     if frames_list is None:

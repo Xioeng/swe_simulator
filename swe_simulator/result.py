@@ -16,11 +16,12 @@ logger = get_logger(__name__)
 
 @dataclass
 class SWEResult:
-    solution: np.ndarray
-    bathymetry: np.ndarray
-    initial_condition: np.ndarray
-    wind_forcing: Union[np.ndarray, Tuple[float, float]]
-    config: SimulationConfig
+    meshgrid: Tuple[np.ndarray, np.ndarray] = None
+    solution: np.ndarray = None
+    bathymetry: np.ndarray = None
+    initial_condition: np.ndarray = None
+    wind_forcing: Union[np.ndarray, Tuple[float, float]] = None
+    config: SimulationConfig = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -30,8 +31,8 @@ class SWEResult:
         with open(filepath, "wb") as f:
             pickle.dump(self, f)
 
-    @staticmethod
-    def load(filepath: Path) -> "SWEResult":
-        logger.info(f"Loading SWe simulation result from {filepath}")
+    @classmethod
+    def load(cls, filepath: Path) -> "SWEResult":
+        logger.info(f"Loading SWE simulation result from {filepath}")
         with open(filepath, "rb") as f:
             return pickle.load(f)

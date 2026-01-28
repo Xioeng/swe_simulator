@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import logging
 import os
 from typing import Optional, Tuple
 
@@ -293,7 +292,7 @@ class SWESolver:
             claw.num_output_times = 1
 
         claw.keep_copy = True
-        claw.verbosity = 0
+        claw.verbosity = 3
         self.claw = claw
 
         return claw
@@ -306,10 +305,13 @@ class SWESolver:
 
         solutions = np.stack([frame.q for frame in self.claw.frames])
         result = SWEResult(
+            meshgrid=(self.X_coord, self.Y_coord),
             solution=solutions,
             bathymetry=self.bathymetry_array,
             initial_condition=self.initial_condition_array,
-            wind_forcing=self.wind_forcing,
+            wind_forcing=self.wind_forcing.get_wind(),
             config=self.config,
         )
+        if self.config.output_dir is not None and self.rank == 0:
+            result.save(os.path.join(self.config.output_dir, "result.pkl"))
         return result

@@ -83,9 +83,9 @@ def test_radial_dam_break() -> None:
     # ========================================================================
 
     # Domain bounds
-    lon_min, lon_max = -80.2015, -80.0641
-    lat_min, lat_max = 25.6528, 25.9287
-    offset = 0.015
+    lon_min, lon_max = -80.138235, -80.134845
+    lat_min, lat_max = 25.908166, 25.913706
+    offset = 0.0
     lon_range = (lon_min + offset, lon_max - offset)
     lat_range = (lat_min + offset, lat_max - offset)
 
@@ -102,7 +102,7 @@ def test_radial_dam_break() -> None:
         nx=40,
         ny=40,
         # Time
-        t_final=10.0,  # seconds
+        t_final=1000.0,  # seconds
         dt=1.0,  # seconds
         # Physics
         gravity=9.81,
@@ -110,7 +110,7 @@ def test_radial_dam_break() -> None:
         bc_lower=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         bc_upper=(pyclaw.BC.extrap, pyclaw.BC.extrap),
         # Output
-        output_dir=None,
+        output_dir="_output",
         multiple_output_times=True,  # Will use t_final/dt
     )
 
@@ -205,6 +205,12 @@ def test_radial_dam_break() -> None:
     # ========================================================================
 
     if solver.rank == 0 and solver.config.output_dir is not None:
+        # sim_utils.visualization.plot_solution(
+        #     output_path=solver.config.output_dir,
+        #     frame=10,
+        #     wave_treshold=1e-2,
+        #     max_arrow_length=0.5,
+        # )
         sim_utils.visualization.animate_solution(
             output_path=solver.config.output_dir,
             frames=None,  # It means all frames

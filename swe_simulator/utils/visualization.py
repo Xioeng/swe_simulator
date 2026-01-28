@@ -8,7 +8,8 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ..logging_config import get_logger
-from .io import load_bathymetry_and_meshgrid, read_solutions
+from ..result import SWEResult
+from .io import read_solutions
 
 logger = get_logger(__name__)
 
@@ -39,7 +40,9 @@ def initialize_plot(output_path: str, **kargs) -> Tuple[plt.Figure, plt.Axes]:
     Tuple[plt.Figure, plt.Axes]
         Matplotlib figure and axes objects.
     """
-    bathymetry, (X, Y) = load_bathymetry_and_meshgrid(output_path)
+
+    result = SWEResult().load(os.path.join(output_path, "result.pkl"))
+    X, Y = result.meshgrid
     plt.style.use("dark_background")
     fig = plt.figure(figsize=(8, 14))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
@@ -48,9 +51,10 @@ def initialize_plot(output_path: str, **kargs) -> Tuple[plt.Figure, plt.Axes]:
     google_tiles = cimgt.GoogleTiles(style="street")
     ax.add_image(
         google_tiles,
-        14,  # zoom level, adjust as needed
+        17,  # zoom level, adjust as needed
         interpolation="bilinear",
     )
+
     return fig, ax
 
 
@@ -92,14 +96,15 @@ def plot_solution(output_path: str, frame: int = 0, **kargs) -> None:
     h_ax.set_extent([X.min(), X.max(), Y.min(), Y.max()], crs=ccrs.PlateCarree())
     # Add satellite imagery using Google Maps tiles
 
-    google_tiles = cimgt.GoogleTiles(style="street")
+    google_tiles = cimgt.GoogleTiles(style="satellite")
     h_ax.add_image(
         google_tiles,
-        14,  # zoom level, adjust as needed
+        17,  # zoom level, adjust as needed
         interpolation="bilinear",
     )
+
     contour = h_ax.contourf(
-        X, Y, free_surface, levels=50, cmap="viridis", alpha=0.7
+        X, Y, bathymetry, levels=50, cmap="viridis", alpha=0.7
     )  # perceptually uniform, good for scalar fields
     velocity_field = h_ax.quiver(
         X,
