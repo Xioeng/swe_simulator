@@ -49,11 +49,11 @@ def initialize_plot(output_path: str, **kargs) -> Tuple[plt.Figure, plt.Axes]:
     ax.set_extent([X.min(), X.max(), Y.min(), Y.max()], crs=ccrs.PlateCarree())
     # Add satellite imagery using Google Maps tiles
     google_tiles = cimgt.GoogleTiles(style="street")
-    ax.add_image(
-        google_tiles,
-        17,  # zoom level, adjust as needed
-        interpolation="bilinear",
-    )
+    # ax.add_image(
+    #     google_tiles,
+    #     12,  # zoom level, adjust as needed
+    #     interpolation="bilinear",
+    # )
 
     return fig, ax
 
@@ -171,17 +171,19 @@ def animate_solution(output_path: str, frames: List[int] | None, **kargs) -> Non
     divider = make_axes_locatable(ax)
     cax1 = divider.new_horizontal(size="5%", pad=0.05, axes_class=plt.Axes)
     cax2 = divider.new_horizontal(size="5%", pad=0.75, axes_class=plt.Axes)
-    fig.colorbar(contourf[0], cax=cax1, label="Water Level (m)")
-    fig.colorbar(quiver[0], cax=cax2, label="Velocity Magnitude (m/s)")
+    colorbar1 = fig.colorbar(contourf[0], cax=cax1, label="Water Level (m)")
+    colorbar2 = fig.colorbar(quiver[0], cax=cax2, label="Velocity Magnitude (m/s)")
     fig.add_axes(cax1)
     fig.add_axes(cax2)
 
     def update(frame_idx: int) -> None:
-        nonlocal cax1, cax2, ax
+        nonlocal cax1, cax2, ax, colorbar1, colorbar2
 
+        ax.clear()
         cax1.clear()
         cax2.clear()
-        ax.clear()
+        # colorbar1.remove()
+        # colorbar2.remove()
         # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
         ax.set_extent([X.min(), X.max(), Y.min(), Y.max()], crs=ccrs.PlateCarree())
         # google_tiles = cimgt.GoogleTiles(style="street")
@@ -235,8 +237,12 @@ def animate_solution(output_path: str, frames: List[int] | None, **kargs) -> Non
         # divider = make_axes_locatable(ax)
         # cax1 = divider.new_horizontal(size="5%", pad=0.05, axes_class=plt.Axes)
         # cax2 = divider.new_horizontal(size="5%", pad=0.65, axes_class=plt.Axes)
-        fig.colorbar(contourf[0], cax=cax1, label="Water Level (m)")
-        fig.colorbar(quiver[0], cax=cax2, label="Velocity Magnitude (m/s)")
+        # print(cax1)
+        assert contourf[0] is not None and quiver[0] is not None
+        colorbar1 = fig.colorbar(contourf[0], ax=ax, cax=cax1, label="Water Level (m)")
+        colorbar2 = fig.colorbar(
+            quiver[0], ax=ax, cax=cax2, label="Velocity Magnitude (m/s)"
+        )
 
     ani = animation.FuncAnimation(
         fig, update, frames=solutions.shape[0], interval=kargs.get("interval", 200)
@@ -248,15 +254,17 @@ def animate_solution(output_path: str, frames: List[int] | None, **kargs) -> Non
             dpi=200,
             fps=40,
         )
-    plt.show()
+    else:
+        plt.show()
+
     return
 
 
 if __name__ == "__main__":
     # plot_solution(output_path="_output", frame=20, wave_treshold=1e-2)
     animate_solution(
-        output_path="_output",
-        frames=list(range(0, 1000)),
+        output_path="../../_output",
+        frames=list(range(0, 2000)),
         wave_treshold=1e-2,
         interval=100,
         save=False,

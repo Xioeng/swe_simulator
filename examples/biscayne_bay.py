@@ -102,8 +102,8 @@ def test_radial_dam_break() -> None:
         nx=40,
         ny=40,
         # Time
-        t_final=1110.0,  # seconds
-        dt=3.5,  # seconds
+        t_final=1000.0,  # seconds
+        dt=1.0,  # seconds
         # Physics
         gravity=9.81,
         # Boundary conditions
@@ -256,6 +256,13 @@ def test_radial_dam_break() -> None:
 
 if __name__ == "__main__":
     # Run the main test
+    # u = sim_utils.visualization.animate_solution(
+    #     output_path="_output",
+    #     frames=range(2000),  # It means all frames
+    #     wave_treshold=1e-2,
+    #     interval=100,
+    #     save=False,
+    # )
     test_radial_dam_break()
 
     # Optionally run simple test
