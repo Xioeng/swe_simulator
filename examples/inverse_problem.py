@@ -104,7 +104,7 @@ def pde(t, q):
 
 
 def fun_bc(x):
-    return 1 - x[:, 0:1]
+    return 0.0
 
 
 def fun_init(x):
