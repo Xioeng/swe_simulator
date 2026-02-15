@@ -16,7 +16,8 @@ logger = get_logger(__name__)
 
 @dataclass
 class SWEResult:
-    meshgrid: Tuple[np.ndarray, np.ndarray] = None
+    meshgrid_coord: Tuple[np.ndarray, np.ndarray] = None
+    meshgrid_metric: Tuple[np.ndarray, np.ndarray] = None
     solution: np.ndarray = None
     bathymetry: np.ndarray = None
     initial_condition: np.ndarray = None

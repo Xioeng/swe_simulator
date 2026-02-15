@@ -305,7 +305,8 @@ class SWESolver:
 
         solutions = np.stack([frame.q for frame in self.claw.frames])
         result = SWEResult(
-            meshgrid=(self.X_coord, self.Y_coord),
+            meshgrid_coord=(self.X_coord, self.Y_coord),
+            meshgrid_metric=(self.X, self.Y),
             solution=solutions,
             bathymetry=self.bathymetry_array,
             initial_condition=self.initial_condition_array,

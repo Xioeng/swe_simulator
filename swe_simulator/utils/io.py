@@ -206,7 +206,7 @@ def read_solutions(
 
     # Load bathymetry and meshgrid
     result = SWEResult().load(outdir.joinpath("result.pkl"))
-    bathymetry, meshgrid = result.bathymetry, result.meshgrid
+    bathymetry, meshgrid = result.bathymetry, result.meshgrid_coord
 
     # Determine which frames to read
     if frames_list is None:

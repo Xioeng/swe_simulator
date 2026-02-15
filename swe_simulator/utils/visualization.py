@@ -42,7 +42,7 @@ def initialize_plot(output_path: str, **kargs) -> Tuple[plt.Figure, plt.Axes]:
     """
 
     result = SWEResult().load(os.path.join(output_path, "result.pkl"))
-    X, Y = result.meshgrid
+    X, Y = result.meshgrid_coord
     plt.style.use("dark_background")
     fig = plt.figure(figsize=(8, 14))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
