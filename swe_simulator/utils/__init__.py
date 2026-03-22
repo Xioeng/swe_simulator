@@ -1,11 +1,18 @@
 """Utility subpackage exports for swe_simulator."""
 
-from . import bathymetry, grid, io, visualization
+from . import bathymetry, grid, io
+
+try:
+    from . import visualization
+except ImportError:
+    visualization = None
 
 __all__ = [
     "bathymetry",
     "grid",
     "io",
     # "validation",
-    "visualization",
 ]
+
+if visualization is not None:
+    __all__.append("visualization")

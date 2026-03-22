@@ -49,4 +49,23 @@ def coordinate_mapper():
 @pytest.fixture
 def wind_forcing():
     """Create a wind forcing object."""
-    return WindForcing(u_wind=5.0, v_wind=0.0)
+    lon_grid, lat_grid = np.meshgrid(
+        np.linspace(-1.0, 1.0, 10),
+        np.linspace(-1.0, 1.0, 10),
+        indexing="ij",
+    )
+    return WindForcing(mesgrid_domain=(lon_grid, lat_grid))
+
+
+@pytest.fixture
+def simple_domain():
+    max_lon = 0.0005  # half-width in longitude (degrees)
+    max_lat = 0.0005  # half-width in latitude (degrees)
+
+    lon_range = (-max_lon, max_lon)
+    lat_range = (-max_lat, max_lat)
+    return np.meshgrid(
+        np.linspace(lon_range[0], lon_range[1], 40),
+        np.linspace(lat_range[0], lat_range[1], 40),
+        indexing="ij",
+    )
