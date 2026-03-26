@@ -1,4 +1,4 @@
-# SWE Simulator
+# TidalFlow-SWE
 
 A Python-based 2D Shallow Water Equations (SWE) solver using [PyClaw](http://www.clawpack.org/pyclaw/) for simulating storm surge, tsunami propagation, and coastal flooding scenarios.
 
