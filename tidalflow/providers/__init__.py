@@ -34,8 +34,8 @@ SlopingBathymetry
 
 Examples
 --------
->>> from swe_simulator.providers import GaussianHumpInitialCondition, ConstantWind
->>> from swe_simulator.config import SimulationConfig
+>>> from tidalflow.providers import GaussianHumpInitialCondition, ConstantWind
+>>> from tidalflow.config import SimulationConfig
 >>>
 >>> config = SimulationConfig(nx=100, ny=100)
 >>> ic = GaussianHumpInitialCondition(height=1.0)

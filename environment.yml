@@ -1,4 +1,4 @@
-name: swe_simulator
+name: tidalflow
 channels:
   - conda-forge
   - defaults
@@ -115,4 +115,4 @@ dependencies:
       - shapely==2.1.2
       - six==1.17.0
       - xarray==2025.12.0
-prefix: /home/xioeng/anaconda3/envs/swe_simulator
+prefix: /home/xioeng/anaconda3/envs/tidalflow

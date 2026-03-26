@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from swe_simulator.forcing import WindForcing
+from tidalflow.forcing import WindForcing
 
 
 def test_wind_forcing_initialization(wind_forcing):

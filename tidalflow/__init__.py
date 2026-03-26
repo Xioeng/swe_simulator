@@ -1,4 +1,4 @@
-"""swe_simulator package: expose commonly used submodules at package level."""
+"""tidalflow package: expose commonly used submodules at package level."""
 
 from . import (
     config,

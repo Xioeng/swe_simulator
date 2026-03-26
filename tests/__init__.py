@@ -1,1 +1,1 @@
-"""Test suite for swe_simulator package."""
+"""Test suite for tidalflow package."""

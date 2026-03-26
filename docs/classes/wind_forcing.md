@@ -57,8 +57,8 @@ PyClaw source-step callback that applies momentum updates and returns `dt`.
 `SWESolver.setup_solver()` wires this class automatically when wind forcing is available.
 
 ```python
-from swe_simulator.forcing import WindForcing
-from swe_simulator.providers import ConstantWind
+from tidalflow.forcing import WindForcing
+from tidalflow.providers import ConstantWind
 
 forcing = WindForcing(
     mesgrid_domain=(X_coord, Y_coord),

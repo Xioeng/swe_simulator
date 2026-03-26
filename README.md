@@ -74,21 +74,21 @@ Use this section as the canonical entry point for project documentation.
 
 ## Installation
 
-Install `swe_simulator` as a Python package (recommended), so imports like
-`import swe_simulator` work consistently across scripts, notebooks, and tests.
+Install `tidalflow` as a Python package (recommended), so imports like
+`import tidalflow` work consistently across scripts, notebooks, and tests.
 
 ### 1) Create and activate conda environment
 
 ```bash
 conda env create -f environment.yml
-conda activate swe_simulator
+conda activate tidalflow
 ```
 
 ### 2) Install from source
 
 ```bash
-git clone https://github.com/yourusername/swe_simulator.git
-cd swe_simulator
+git clone https://github.com/yourusername/tidalflow-swe.git
+cd tidalflow-swe
 pip install -r requirements.txt
 pip install .
 ```
@@ -110,10 +110,10 @@ pip install -e .
 
 ```python
 import numpy as np
-import swe_simulator
+import tidalflow
 
 # Create configuration
-config = swe_simulator.config.SimulationConfig(
+config = tidalflow.config.SimulationConfig(
     lon_range=(-1.0, 1.0),
     lat_range=(-1.0, 1.0),
     nx=50,
@@ -127,7 +127,7 @@ config = swe_simulator.config.SimulationConfig(
 )
 
 # Initialize solver
-solver = swe_simulator.solver.SWESolver(config=config)
+solver = tidalflow.solver.SWESolver(config=config)
 
 # Set flat bathymetry (-10m depth)
 bathymetry = -10.0 * np.ones((config.ny, config.nx))
@@ -154,11 +154,11 @@ print(f"Simulation complete! Shape: {solutions.shape}")
 
 ```python
 import numpy as np
-import swe_simulator
-import swe_simulator.utils as sim_utils
+import tidalflow
+import tidalflow.utils as sim_utils
 
 # Configuration for Florida coast
-config = swe_simulator.config.SimulationConfig(
+config = tidalflow.config.SimulationConfig(
     lon_range=(-80.1865, -80.0791),
     lat_range=(25.6678, 25.9137),
     nx=40,
@@ -173,7 +173,7 @@ config = swe_simulator.config.SimulationConfig(
 )
 
 # Initialize solver
-solver = swe_simulator.solver.SWESolver(config=config)
+solver = tidalflow.solver.SWESolver(config=config)
 
 # Load GEBCO bathymetry
 bathymetry = sim_utils.interpolate_gebco_on_grid(
@@ -201,7 +201,7 @@ solutions = solver.solve()
 
 # Visualize
 if solver.rank == 0:
-    swe_simulator.utils.animate_solution(
+    tidalflow.utils.animate_solution(
         output_path=config.output_dir,
         frames=None,  # all frames
         wave_treshold=1e-2,
@@ -219,7 +219,7 @@ if solver.rank == 0:
 The `SimulationConfig` dataclass centralizes all simulation parameters:
 
 ```python
-config = swe_simulator.config.SimulationConfig(
+config = tidalflow.config.SimulationConfig(
     # Domain
     lon_range=(-80.2, -80.0),      # Longitude range (degrees)
     lat_range=(25.6, 25.9),         # Latitude range (degrees)
@@ -254,7 +254,7 @@ config.validate()
 config.save("config.json")
 
 # Load configuration
-config = swe_simulator.config.SimulationConfig.load("config.json")
+config = tidalflow.config.SimulationConfig.load("config.json")
 ```
 
 ### Boundary Conditions
@@ -296,10 +296,10 @@ These pages are the source of truth for API details; this README keeps only high
 
 ```python
 import numpy as np
-import swe_simulator
+import tidalflow
 
 # Configuration
-config = swe_simulator.config.SimulationConfig(
+config = tidalflow.config.SimulationConfig(
     lon_range=(-10.0, 10.0),
     lat_range=(-10.0, 10.0),
     nx=100,
@@ -313,7 +313,7 @@ config = swe_simulator.config.SimulationConfig(
 )
 
 # Initialize solver
-solver = swe_simulator.solver.SWESolver(config=config)
+solver = tidalflow.solver.SWESolver(config=config)
 
 # Flat bathymetry at -10m
 bathymetry = -10.0 * np.ones((config.ny, config.nx))
@@ -338,12 +338,12 @@ print(f"Generated {solutions.shape[0]} output frames")
 
 ```python
 import numpy as np
-import swe_simulator
-import swe_simulator.utils as sim_utils
+import tidalflow
+import tidalflow.utils as sim_utils
 import functools
 
 # Configuration for Miami area
-config = swe_simulator.config.SimulationConfig(
+config = tidalflow.config.SimulationConfig(
     lon_range=(-80.1865, -80.0791),
     lat_range=(25.6678, 25.9137),
     nx=40,
@@ -358,7 +358,7 @@ config = swe_simulator.config.SimulationConfig(
 )
 
 # Initialize solver
-solver = swe_simulator.solver.SWESolver(config=config)
+solver = tidalflow.solver.SWESolver(config=config)
 
 # Load GEBCO bathymetry
 bathymetry_interpolator = functools.partial(
@@ -393,8 +393,8 @@ print(f"Simulation complete! Shape: {solutions.shape}")
 ### Example 3: Visualization
 
 ```python
-import swe_simulator
-import swe_simulator.utils as sim_utils
+import tidalflow
+import tidalflow.utils as sim_utils
 
 # After running a simulation...
 
@@ -414,7 +414,7 @@ if solver.rank == 0:
     print(f"Time range: {times[0]:.1f} to {times[-1]:.1f} seconds")
     
     # Animate solution
-    swe_simulator.utils.animate_solution(
+    tidalflow.utils.animate_solution(
         output_path=config.output_dir,
         frames=None,  # all frames
         wave_treshold=1e-2,
@@ -451,7 +451,7 @@ After running a simulation, the solver creates an output directory (default: `_o
 
 ```python
 import numpy as np
-import swe_simulator.utils as sim_utils
+import tidalflow.utils as sim_utils
 
 # Load saved data
 result = sim_utils.read_solutions(outdir="_output")
@@ -483,7 +483,7 @@ eta = h + bathymetry
 ### Reading Solutions
 
 ```python
-from swe_simulator.utils import read_solutions
+from tidalflow.utils import read_solutions
 
 result = read_solutions(
     outdir="_output",
@@ -502,7 +502,7 @@ result = read_solutions(
 ### Visualization
 
 ```python
-from swe_simulator.utils import animate_solution, plot_solution
+from tidalflow.utils import animate_solution, plot_solution
 
 # Animate all frames
 animate_solution(
@@ -524,7 +524,7 @@ plot_solution(
 ### Bathymetry
 
 ```python
-from swe_simulator.utils import interpolate_gebco_on_grid
+from tidalflow.utils import interpolate_gebco_on_grid
 
 # Load GEBCO bathymetry and interpolate to grid
 bathymetry = interpolate_gebco_on_grid(
@@ -711,7 +711,7 @@ conda install cartopy  # Recommended method
 ## Project Structure
 
 ```
-swe_simulator/
+tidalflow/
 ├── __init__.py              # Package exports
 ├── config.py                # SimulationConfig dataclass
 ├── solver.py                # SWESolver main class

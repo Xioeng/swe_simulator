@@ -1,1 +1,1 @@
-"""Tests for swe_simulator.providers package."""
+"""Tests for tidalflow.providers package."""

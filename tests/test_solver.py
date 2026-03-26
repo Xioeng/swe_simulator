@@ -7,8 +7,8 @@ import pytest
 pytest.importorskip("mpi4py")
 pytest.importorskip("clawpack.petclaw")
 
-from swe_simulator.providers import BathymetryProvider, InitialConditionProvider
-from swe_simulator.solver import SWESolver
+from tidalflow.providers import BathymetryProvider, InitialConditionProvider
+from tidalflow.solver import SWESolver
 
 
 class DummyBathymetryProvider(BathymetryProvider):

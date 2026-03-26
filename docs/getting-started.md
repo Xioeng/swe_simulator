@@ -5,7 +5,7 @@ This page shows the minimum workflow to run a simulation.
 ## 1) Create a config
 
 ```python
-from swe_simulator.config import SimulationConfig
+from tidalflow.config import SimulationConfig
 
 config = SimulationConfig(
     lon_range=(-1.0, 1.0),
@@ -20,7 +20,7 @@ config = SimulationConfig(
 ## 2) Create a solver
 
 ```python
-from swe_simulator.solver import SWESolver
+from tidalflow.solver import SWESolver
 
 solver = SWESolver(config=config)
 ```

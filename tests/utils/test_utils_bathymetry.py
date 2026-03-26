@@ -1,4 +1,4 @@
-"""Tests for swe_simulator.utils.bathymetry."""
+"""Tests for tidalflow.utils.bathymetry."""
 
 import sys
 import types
@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from swe_simulator.utils import bathymetry
+from tidalflow.utils import bathymetry
 
 
 def test_load_gebco_data_from_xarray_transposes_elevation(tmp_path, monkeypatch):

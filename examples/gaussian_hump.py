@@ -7,9 +7,9 @@ import logging
 import clawpack.petclaw as pyclaw
 import numpy as np
 
-import swe_simulator
+import tidalflow
 
-logger = swe_simulator.logging_config.setup_logging(
+logger = tidalflow.logging_config.setup_logging(
     logging.DEBUG,
     "gaussian_hump_example.log",
 )
@@ -36,7 +36,7 @@ def test_gaussian_hump() -> None:
     lon_range = (-max_lon, max_lon)
     lat_range = (-max_lat, max_lat)
 
-    config = swe_simulator.config.SimulationConfig(
+    config = tidalflow.config.SimulationConfig(
         # Domain
         lon_range=lon_range,
         lat_range=lat_range,
@@ -60,11 +60,11 @@ def test_gaussian_hump() -> None:
     print("Creating providers...")
 
     # Flat bathymetry at 1m depth
-    bathymetry_provider = swe_simulator.providers.FlatBathymetry(depth=-1.0)
+    bathymetry_provider = tidalflow.providers.FlatBathymetry(depth=-1.0)
 
     # Gaussian hump
     initial_condition_provider = (
-        swe_simulator.providers.GaussianHumpInitialConditionNoGeo(
+        tidalflow.providers.GaussianHumpInitialConditionNoGeo(
             bias=0.2,
             height=3.0,  # 1 meter hump
             width=100.0,  # width parameter (larger = wider hump)
@@ -75,7 +75,7 @@ def test_gaussian_hump() -> None:
     # Solver setup
 
     print("Initializing SWESolver...")
-    solver = swe_simulator.solver.SWESolver(
+    solver = tidalflow.solver.SWESolver(
         config=config,
         bathymetry_provider=bathymetry_provider,
         ic_provider=initial_condition_provider,
@@ -113,7 +113,7 @@ def test_gaussian_hump() -> None:
 
     if solver.rank == 0 and solver.config.output_dir is not None:
         print("\nAnimating results...")
-        swe_simulator.utils.visualization.animate_surface(
+        tidalflow.utils.visualization.animate_surface(
             output_path=solver.config.output_dir,
             frames=None,  # All frames
             wave_treshold=1e-3,

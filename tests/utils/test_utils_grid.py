@@ -1,10 +1,10 @@
-"""Tests for swe_simulator.utils.grid."""
+"""Tests for tidalflow.utils.grid."""
 
 import numpy as np
 import numpy.typing as npt
 import pytest
 
-from swe_simulator.utils import grid
+from tidalflow.utils import grid
 
 
 def test_generate_cell_centers_shape_and_midpoints():

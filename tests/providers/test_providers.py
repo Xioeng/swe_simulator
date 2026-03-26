@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from swe_simulator.providers import (
+from tidalflow.providers import (
     BathymetryProvider,
     ConstantWind,
     FlatBathymetry,

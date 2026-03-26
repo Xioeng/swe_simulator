@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from swe_simulator.coordinate_mapper import GeographicCoordinateMapper
+from tidalflow.coordinate_mapper import GeographicCoordinateMapper
 
 
 def test_mapper_initialization(coordinate_mapper):

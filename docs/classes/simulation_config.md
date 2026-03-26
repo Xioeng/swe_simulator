@@ -71,7 +71,7 @@ Human-readable summary with domain, grid, time, physics, output, CFL, and BC val
 ## Example
 
 ```python
-from swe_simulator.config import SimulationConfig
+from tidalflow.config import SimulationConfig
 import clawpack.petclaw as pyclaw
 
 config = SimulationConfig(

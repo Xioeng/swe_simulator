@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from swe_simulator.config import SimulationConfig
+from tidalflow.config import SimulationConfig
 
 
 def test_valid_config_creation(basic_config):

@@ -1,4 +1,4 @@
-"""Utility subpackage exports for swe_simulator."""
+"""Utility subpackage exports for tidalflow."""
 
 from . import bathymetry, grid, io
 

@@ -7,9 +7,9 @@ import logging
 import clawpack.petclaw as pyclaw
 import numpy as np
 
-import swe_simulator
+import tidalflow
 
-logger = swe_simulator.logging_config.setup_logging(
+logger = tidalflow.logging_config.setup_logging(
     logging.DEBUG,
     "biscayne_bay_example.log",
 )
@@ -28,7 +28,7 @@ def test_radial_dam_break() -> None:
     lat_range = (lat_min + offset, lat_max - offset)
 
     # Create configuration
-    config = swe_simulator.config.SimulationConfig(
+    config = tidalflow.config.SimulationConfig(
         # Domain
         lon_range=lon_range,
         lat_range=lat_range,
@@ -57,7 +57,7 @@ def test_radial_dam_break() -> None:
     print("Creating data providers...")
 
     # Bathymetry from GEBCO NetCDF file
-    bathymetry_provider = swe_simulator.providers.BathymetryFromNC(
+    bathymetry_provider = tidalflow.providers.BathymetryFromNC(
         nc_path="data/gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc"
     )
 
@@ -68,7 +68,7 @@ def test_radial_dam_break() -> None:
     center_lon = alpha_lon * lon_range[0] + (1 - alpha_lon) * lon_range[1]
     center_lat = alpha_lat * lat_range[0] + (1 - alpha_lat) * lat_range[1]
     print(f"Domain center (lon, lat): ({center_lon:.4f}, {center_lat:.4f})")
-    initial_condition_provider = swe_simulator.providers.GaussianHumpInitialCondition(
+    initial_condition_provider = tidalflow.providers.GaussianHumpInitialCondition(
         height=3,  # meters
         width=10000,  # controls spread in coordinate space (roughly 1 degree ~ 111111 m,
         bias=0.25,  # base water level (tide)
@@ -78,7 +78,7 @@ def test_radial_dam_break() -> None:
     # Solver setup
 
     print("Initializing SWESolver...")
-    solver = swe_simulator.solver.SWESolver(
+    solver = tidalflow.solver.SWESolver(
         config=config,
         bathymetry_provider=bathymetry_provider,
         ic_provider=initial_condition_provider,
@@ -122,7 +122,7 @@ def test_radial_dam_break() -> None:
     # Visualize results (only on rank 0 for MPI)
 
     if solver.rank == 0 and solver.config.output_dir is not None:
-        swe_simulator.utils.visualization.animate_solution(
+        tidalflow.utils.visualization.animate_solution(
             output_path=solver.config.output_dir,
             frames=None,  # It means all frames
             wave_treshold=1e-2,

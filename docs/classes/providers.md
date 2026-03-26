@@ -127,13 +127,13 @@ Same constructor signature as `GaussianHumpInitialCondition`, but evaluates the 
 ## Example: Wiring Providers into SWESolver
 
 ```python
-from swe_simulator.config import SimulationConfig
-from swe_simulator.providers import (
+from tidalflow.config import SimulationConfig
+from tidalflow.providers import (
     BathymetryFromNC,
     ConstantWind,
     GaussianHumpInitialCondition,
 )
-from swe_simulator.solver import SWESolver
+from tidalflow.solver import SWESolver
 
 config = SimulationConfig(nx=40, ny=40, t_final=1000.0, dt=1.0)
 

@@ -73,8 +73,8 @@
 
 ```python
 import numpy as np
-from swe_simulator.config import SimulationConfig
-from swe_simulator.solver import SWESolver
+from tidalflow.config import SimulationConfig
+from tidalflow.solver import SWESolver
 
 config = SimulationConfig(nx=50, ny=50, t_final=100.0, dt=1.0)
 solver = SWESolver(config=config)

@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from swe_simulator.config import SimulationConfig
-from swe_simulator.coordinate_mapper import GeographicCoordinateMapper
-from swe_simulator.forcing import WindForcing
-from swe_simulator.providers import ConstantWind
+from tidalflow.config import SimulationConfig
+from tidalflow.coordinate_mapper import GeographicCoordinateMapper
+from tidalflow.forcing import WindForcing
+from tidalflow.providers import ConstantWind
 
 
 @pytest.fixture

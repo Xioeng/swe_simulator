@@ -1,4 +1,4 @@
-"""Logging configuration utilities for SWE Simulator."""
+"""Logging configuration utilities for TidalFlow (SWE Solver)."""
 
 import logging
 import sys
@@ -11,7 +11,7 @@ def setup_logging(
     format_string: str | None = None,
 ) -> logging.Logger:
     """
-    Set up logging for SWE Simulator.
+    Set up logging for TidalFlow.
 
     Parameters
     ----------
@@ -25,7 +25,7 @@ def setup_logging(
     Returns
     -------
     logging.Logger
-        Configured logger instance for 'swe_simulator'
+        Configured logger instance for 'tidalflow'
     """
     if isinstance(level, str):
         level = getattr(logging, level.upper())
@@ -35,7 +35,7 @@ def setup_logging(
 
     formatter = logging.Formatter(format_string, datefmt="%Y-%m-%d %H-%M-%S")
 
-    logger = logging.getLogger("swe_simulator")
+    logger = logging.getLogger("tidalflow")
     logger.setLevel(level)
     logger.handlers.clear()
 
@@ -80,7 +80,7 @@ def get_logger(name: str) -> logging.Logger:
 
 def set_log_level(level: int | str) -> None:
     """
-    Change the logging level for all SWE Simulator loggers.
+    Change the logging level for all TidalFlow loggers.
 
     Parameters
     ----------
@@ -90,7 +90,7 @@ def set_log_level(level: int | str) -> None:
     if isinstance(level, str):
         level = getattr(logging, level.upper())
 
-    logger = logging.getLogger("swe_simulator")
+    logger = logging.getLogger("tidalflow")
     logger.setLevel(level)
 
     for handler in logger.handlers:
@@ -98,12 +98,12 @@ def set_log_level(level: int | str) -> None:
 
 
 def disable_logging() -> None:
-    """Disable all logging output from SWE Simulator."""
-    logger = logging.getLogger("swe_simulator")
+    """Disable all logging output from TidalFlow."""
+    logger = logging.getLogger("tidalflow")
     logger.disabled = True
 
 
 def enable_logging() -> None:
     """Re-enable logging output after it has been disabled."""
-    logger = logging.getLogger("swe_simulator")
+    logger = logging.getLogger("tidalflow")
     logger.disabled = False

@@ -22,8 +22,8 @@ from clawpack.riemann.shallow_roe_with_efix_2D_constants import (
 )
 from mpi4py import MPI
 
-from swe_simulator.forcing import wind_forcing_step
-from swe_simulator.mapper import LocalLonLatMetricMapper
+from tidalflow.forcing import wind_forcing_step
+from tidalflow.mapper import LocalLonLatMetricMapper
 
 # MPI setup
 comm = MPI.COMM_WORLD

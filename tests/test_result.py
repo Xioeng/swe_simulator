@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from swe_simulator.result import SWEResult
+from tidalflow.result import SWEResult
 
 
 def test_to_dict_returns_expected_structure(basic_config):
