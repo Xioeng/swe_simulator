@@ -48,16 +48,16 @@ class GeographicCoordinateMapper:
 
         Parameters
         ----------
-        lon : float or np.ndarray
+        lon : float or npt.NDArray[np.float64]
             Longitude(s) in degrees
-        lat : float or np.ndarray
+        lat : float or npt.NDArray[np.float64]
             Latitude(s) in degrees
 
         Returns
         -------
-        x : float or np.ndarray
+        x : float or npt.NDArray[np.float64]
             X coordinate(s) in meters
-        y : float or np.ndarray
+        y : float or npt.NDArray[np.float64]
             Y coordinate(s) in meters
         """
         lon_rad = np.deg2rad(lon)
@@ -81,16 +81,16 @@ class GeographicCoordinateMapper:
 
         Parameters
         ----------
-        x : float or np.ndarray
+        x : float or npt.NDArray[np.float64]
             X coordinate(s) in meters
-        y : float or np.ndarray
+        y : float or npt.NDArray[np.float64]
             Y coordinate(s) in meters
 
         Returns
         -------
-        lon : float or np.ndarray
+        lon : float or npt.NDArray[np.float64]
             Longitude(s) in degrees
-        lat : float or np.ndarray
+        lat : float or npt.NDArray[np.float64]
             Latitude(s) in degrees
         """
         lon_rad = self._lon0_rad + x / (self.R * self.cos_lat0)

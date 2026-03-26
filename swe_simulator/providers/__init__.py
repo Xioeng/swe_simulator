@@ -50,7 +50,12 @@ from .base import (
     InitialConditionProvider,
     WindProvider,
 )
-from .bathymetry import BathymetryFromNC, FlatBathymetry, SlopingBathymetry
+from .bathymetry import (
+    BathymetryFromCSV,
+    BathymetryFromNC,
+    FlatBathymetry,
+    SlopingBathymetry,
+)
 from .initial_condition import (
     FlatInitialCondition,
     GaussianHumpInitialCondition,
@@ -74,4 +79,5 @@ __all__ = [
     "FlatBathymetry",
     "SlopingBathymetry",
     "BathymetryFromNC",
+    "BathymetryFromCSV",
 ]

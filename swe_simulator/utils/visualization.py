@@ -141,13 +141,13 @@ def plot_solution(output_path: str, frame: int = 0, **kargs) -> None:
     h_fig.add_axes(cax2)
     h_ax.set_xlabel("Longitude")
     h_ax.set_ylabel("Latitude")
-    h_ax.set_title(f"Wave height at frame {frame}")
+    h_ax.set_title(f"Wave height at time {result['times'][frame]}")
     h_ax.set_xticks(np.linspace(X.min(), X.max(), 6))
     h_ax.set_yticks(np.linspace(Y.min(), Y.max(), 6))
     # if kargs.get("dark", True):
     h_fig.tight_layout()
     h_fig.savefig(
-        os.path.join(output_path, f"solution_frame_{frame}.png"),
+        os.path.join(output_path, f"solution_time_{result['times'][frame]}.png"),
         bbox_inches="tight",
         transparent=True,
         dpi=200,
@@ -226,7 +226,7 @@ def animate_solution(
         velocity = np.sqrt(v_x**2 + v_y**2)
 
         contourf[0] = ax.contourf(
-            X, Y, free_surface, levels=50, cmap="viridis", alpha=0.7
+            X, Y, free_surface, levels=30, cmap="viridis", alpha=0.7
         )
         v_x_scaled[mask] = np.nan
         v_y_scaled[mask] = np.nan
@@ -243,7 +243,7 @@ def animate_solution(
         )
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
-        ax.set_title(f"Wave height at frame {frame_idx}")
+        ax.set_title(f"Wave height at time {result['times'][frame_idx]:.2f} s")
         ax.set_xticks(np.linspace(X.min(), X.max(), 4))
         ax.set_yticks(np.linspace(Y.min(), Y.max(), 6))
         # if dark_mode:
@@ -394,7 +394,7 @@ def animate_surface(
         ax.set_ylim(y_min, y_max)
         ax.set_zlim(z_min - 0.1, z_max + 0.1)
         ax.set_zlabel("Surface Elevation (m)")
-        ax.set_title(f"Wave surface at frame {frame_idx}")
+        ax.set_title(f"Wave surface at time {result['times'][frame_idx]:.2f} s")
         ax.view_init(elev=elev, azim=azim)
         ax.set_xticks([])
         ax.set_yticks([])

@@ -1,6 +1,7 @@
 """Tests for solver module."""
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 pytest.importorskip("mpi4py")
@@ -16,7 +17,9 @@ class DummyBathymetryProvider(BathymetryProvider):
     def __init__(self, depth: float = -7.0):
         self.depth = depth
 
-    def get_bathymetry(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    def get_bathymetry(
+        self, lon: npt.NDArray[np.float64], lat: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         return self.depth * np.ones_like(lon)
 
 
@@ -26,7 +29,9 @@ class DummyInitialConditionProvider(InitialConditionProvider):
     def __init__(self, depth: float = 1.5):
         self.depth = depth
 
-    def get_initial_condition(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    def get_initial_condition(
+        self, lon: npt.NDArray[np.float64], lat: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         h = self.depth * np.ones_like(lon)
         hu = np.zeros_like(lon)
         hv = np.zeros_like(lon)

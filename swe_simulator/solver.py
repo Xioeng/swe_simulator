@@ -4,7 +4,7 @@
 import os
 from typing import cast
 
-import clawpack.petclaw as pyclaw
+import clawpack.pyclaw as pyclaw
 import numpy as np
 import numpy.typing as npt
 from clawpack import riemann
@@ -64,14 +64,19 @@ class SWESolver:
         self.bathymetry_provider = bathymetry_provider
 
         # Arrays (will be populated from providers or manual setters)
-        self.bathymetry_array: np.ndarray = np.zeros((self.config.ny, self.config.nx))
-        self.initial_condition_array: np.ndarray = np.zeros(
+        self.bathymetry_array: npt.NDArray[np.float64] = np.zeros(
+            (self.config.ny, self.config.nx)
+        )
+        self.initial_condition_array: npt.NDArray[np.float64] = np.zeros(
             (3, self.config.ny, self.config.nx)
         )
 
         # MPI
         self.comm: MPI.Comm = MPI.COMM_WORLD
         self.rank: int = self.comm.Get_rank()
+
+        # PyClaw objects
+        self.claw: pyclaw.Controller
 
         if self.config.lon_range is not None and self.config.lat_range is not None:
             logger.info("Setting domain in init")
@@ -147,7 +152,7 @@ class SWESolver:
 
     @staticmethod
     def _check_arrays_sanity_set(
-        array: np.ndarray, expected_shape: tuple[int, ...], name: str
+        array: npt.NDArray[np.float64], expected_shape: tuple[int, ...], name: str
     ) -> list:
         errors = []
         if array is None:
@@ -189,13 +194,13 @@ class SWESolver:
             wind_provider=self.wind_provider,
         )
 
-    def set_bathymetry(self, bathymetry_array: np.ndarray) -> None:
+    def set_bathymetry(self, bathymetry_array: npt.NDArray[np.float64]) -> None:
         """
         Set the bathymetry for the domain.
 
         Parameters
         ----------
-        bathymetry_array : np.ndarray
+        bathymetry_array : npt.NDArray[np.float64]
             Array of shape (ny, nx) with bathymetry values
 
         Notes
@@ -205,13 +210,13 @@ class SWESolver:
         self.bathymetry_array = bathymetry_array
         self.bathymetry_provider = None
 
-    def set_initial_condition(self, initial_condition: np.ndarray) -> None:
+    def set_initial_condition(self, initial_condition: npt.NDArray[np.float64]) -> None:
         """
         Set the initial condition.
 
         Parameters
         ----------
-        initial_condition : np.ndarray
+        initial_condition : npt.NDArray[np.float64]
             Array of shape (3, ny, nx) with [h, hu, hv]
 
         Notes
@@ -293,6 +298,7 @@ class SWESolver:
 
         # Set state
         h = np.maximum(0.0, self.initial_condition_array[0] - self.bathymetry_array)
+        h = self.initial_condition_array[0] - self.bathymetry_array
         state.q[depth, :, :] = h
         state.q[x_momentum, :, :] = self.initial_condition_array[1]
         state.q[y_momentum, :, :] = self.initial_condition_array[2]
@@ -303,6 +309,7 @@ class SWESolver:
         rs = riemann.sw_aug_2D
         solver = pyclaw.ClawSolver2D(rs)
         solver.fwave = True
+        solver.verbosity = 0
         return solver
 
     def _configure_boundary_conditions(self, solver) -> None:
@@ -342,6 +349,7 @@ class SWESolver:
     def _create_controller(self, solver, state, domain) -> pyclaw.Controller:
         """Create and configure the high-level PyClaw controller."""
         claw = pyclaw.Controller()
+        claw.logger = logger
         claw.tfinal = self.config.t_final
         claw.solution = pyclaw.Solution(state, domain)
 
@@ -358,10 +366,10 @@ class SWESolver:
             claw.num_output_times = 1
 
         claw.keep_copy = True
-        claw.verbosity = 3
+        # claw.verbosity = 0
         return claw
 
-    def setup_solver(self) -> pyclaw.Controller:
+    def setup_solver(self) -> None:
         """
         Construct the PyClaw solver, domain, and controller.
 
@@ -386,12 +394,10 @@ class SWESolver:
 
         self.claw = claw
 
-        return claw
-
     def solve(self) -> SWEResult:
         """Run the simulation."""
-        if self.claw is None:
-            self.setup_solver()
+
+        self.setup_solver()
         self.claw.run()
 
         solutions = np.stack([frame.q for frame in self.claw.frames])

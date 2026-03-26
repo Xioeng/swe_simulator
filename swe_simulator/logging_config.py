@@ -33,7 +33,7 @@ def setup_logging(
     if format_string is None:
         format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-    formatter = logging.Formatter(format_string, datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter(format_string, datefmt="%Y-%m-%d %H-%M-%S")
 
     logger = logging.getLogger("swe_simulator")
     logger.setLevel(level)

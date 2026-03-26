@@ -1,6 +1,7 @@
 """Tests for swe_simulator.utils.grid."""
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from swe_simulator.utils import grid
@@ -89,7 +90,7 @@ def test_build_scattered_interpolator_reproduces_sample_points():
 def test_interpolate_on_mesh_uses_lon_lat_query_order():
     """Mesh interpolation should pass points to interpolator as (lon, lat)."""
 
-    def fake_interpolator(points: np.ndarray) -> np.ndarray:
+    def fake_interpolator(points: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         # f(lon, lat) = lon + 2*lat
         return points[:, 0] + 2.0 * points[:, 1]
 

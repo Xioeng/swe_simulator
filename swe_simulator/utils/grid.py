@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 def generate_cell_centers(
     x_lower: float, x_upper: float, y_lower: float, y_upper: float, nx: int, ny: int
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Generate cell center coordinates for a 2D grid.
 
@@ -40,7 +40,7 @@ def generate_cell_centers(
 
     Returns
     -------
-    X, Y : np.ndarray
+    X, Y : npt.NDArray[np.float64]
         2D arrays of cell center coordinates
     """
     dx = (x_upper - x_lower) / nx
@@ -69,11 +69,11 @@ def build_regular_grid_interpolator(
 
     Parameters
     ----------
-    lon : np.ndarray
+    lon : npt.NDArray[np.float64]
         1D array of longitude coordinates (degrees)
-    lat : np.ndarray
+    lat : npt.NDArray[np.float64]
         1D array of latitude coordinates (degrees)
-    values : np.ndarray
+    values : npt.NDArray[np.float64]
         2D array of values on the (lat, lon) grid
     method : str, default='linear'
         Interpolation method: 'linear', 'nearest', or 'cubic'
@@ -163,11 +163,11 @@ def build_scattered_interpolator(
 
     Parameters
     ----------
-    lon : np.ndarray
+    lon : npt.NDArray[np.float64]
         1D array of longitudes for each sample point.
-    lat : np.ndarray
+    lat : npt.NDArray[np.float64]
         1D array of latitudes for each sample point.
-    values : np.ndarray
+    values : npt.NDArray[np.float64]
         1D array of values associated with each (lon, lat) point.
     method : str, default='linear'
         Interpolation method: 'linear' or 'nearest'.
@@ -256,16 +256,16 @@ def interpolate_on_mesh(
     interpolator : Callable
         Pre-built interpolator callable (from build_regular_grid_interpolator,
         build_scattered_interpolator, build_gebco_interpolator, etc.)
-    X : np.ndarray
+    X : npt.NDArray[np.float64]
         2D array of longitude coordinates (degrees)
-    Y : np.ndarray
+    Y : npt.NDArray[np.float64]
         2D array of latitude coordinates (degrees)
     fill_nan_with : float, optional
         Value to replace NaN values with. If None, NaNs are preserved.
 
     Returns
     -------
-    np.ndarray
+    npt.NDArray[np.float64]
         2D array of interpolated values matching the shape of X and Y.
 
     Raises

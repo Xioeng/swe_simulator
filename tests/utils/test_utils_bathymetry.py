@@ -4,6 +4,7 @@ import sys
 import types
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from swe_simulator.utils import bathymetry
@@ -82,7 +83,7 @@ def test_interpolate_gebco_on_grid_delegates_to_grid_interpolator(
 ):
     """GEBCO grid interpolation should use the built interpolator on mesh."""
 
-    def fake_interpolator(points: np.ndarray) -> np.ndarray:
+    def fake_interpolator(points: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         # f(lon, lat) = lon - lat
         return points[:, 0] - points[:, 1]
 
