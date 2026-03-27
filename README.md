@@ -82,9 +82,85 @@ See example outputs before diving into implementation details.
 - [Project Structure](#project-structure)
 - [Data Requirements](#data-requirements)
 - [References](#references)
+- [Contributing](#contributing)
+- [Citation](#citation)
 - [License](#license)
 
 ---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────┐
+│      SimulationConfig                   │
+│  (Domain, Time, Physics Params)         │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│  Providers                              │
+│  ├─ BathymetryProvider                 │
+│  ├─ InitialConditionProvider           │
+│  └─ WindProvider                       │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│      SWESolver                          │
+│  (Integrates PyClaw + SWE Physics)      │
+│  ├─ Geographic Coordinate Mapping      │
+│  ├─ Riemann Solver (Roe-type)          │
+│  └─ Bathymetric Source Terms           │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│   SWEResult (Solutions + Metadata)      │
+│   └─ Solution Arrays + Coordinates      │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│   Visualization & Analysis              │
+│   ├─ 2D Animations with Cartopy        │
+│   ├─ 3D Surface Plots                  │
+│   └─ Custom Matplotlib rcParams         │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Use Cases
+
+TidalFlow-SWE is designed for a variety of coastal and hydrodynamic applications:
+
+🌊 **Storm Surge Prediction** - Simulate hurricane-driven water rise in coastal areas for emergency preparedness and risk assessment
+
+🌍 **Tsunami Modeling** - Track wave propagation from seismic events and assess coastal vulnerability
+
+🏘️ **Flood Risk Assessment** - Evaluate inundation hazards for critical infrastructure and urban planning
+
+⛑️ **Coastal Protection Design** - Model effectiveness of sea walls, barriers, and other protective structures
+
+💧 **Hydrodynamic Studies** - General shallow water flow problems in estuaries, harbors, and coastal zones
+
+🔬 **Research & Education** - Educational tool for understanding finite volume methods and shallow water physics
+
+---
+
+## How It Compares
+
+| Feature | TidalFlow-SWE | PyClaw | ADCIRC |
+|---------|:--:|:--:|:--:|
+| Python-based | ✅ | ✅ | ❌ |
+| Geographic coordinates | ✅ | ⚠️ | ✅ |
+| MPI Parallelization | ✅ | ✅ | ✅ |
+| Wind forcing | ✅ | ❌ | ✅ |
+| Real bathymetry (GEBCO) | ✅ | ❌ | ✅ |
+| Visualization tools | ✅ | ⚠️ | ⚠️ |
+| Configuration via JSON | ✅ | ❌ | ❌ |
+| Ease of use | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| Learning curve | Low | Medium | High |
 
 ---
 
@@ -450,6 +526,9 @@ if solver.rank == 0:
 
 ---
 
+<details>
+<summary><b>📂 Output Format</b> (click to expand)</summary>
+
 ## Output Format
 
 After running a simulation, the solver creates an output directory (default: `_output/`) containing:
@@ -500,6 +579,8 @@ v = np.where(h > 1e-6, hv / h, 0)
 # Calculate free surface elevation
 eta = h + bathymetry
 ```
+
+</details>
 
 ---
 
@@ -600,6 +681,9 @@ Where:
 
 ---
 
+<details>
+<summary><b>💡 Tips and Best Practices</b> (click to expand)</summary>
+
 ## Tips and Best Practices
 
 ### 1. Grid Resolution
@@ -685,7 +769,12 @@ mpiexec -n 4 python your_script.py
 - **Use MPI**: Parallelize for large domains
 - **Larger dt**: Use largest stable time step
 
+</details>
+
 ---
+
+<details>
+<summary><b>🔧 Troubleshooting</b> (click to expand)</summary>
 
 ## Troubleshooting
 
@@ -750,6 +839,8 @@ conda install cartopy  # Recommended method
 - Verify bathymetry data is reasonable
 - Check CFL condition: reduce `cfl_desired`
 
+</details>
+
 ---
 
 ## Project Structure
@@ -806,6 +897,85 @@ Example filename: `gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc`
 - **Riemann Solver**: Uses `shallow_roe_with_efix_2D`
 - LeVeque, R. J. (2002). *Finite Volume Methods for Hyperbolic Problems*
 - GEBCO Bathymetric Data: https://www.gebco.net/
+
+---
+
+## Contributing
+
+We welcome contributions! Whether you have feedback on features, have encountered bugs, or have suggestions for enhancements, we'd love to hear from you.
+
+> [!IMPORTANT]
+> Your insights help us make TidalFlow-SWE more robust and user-friendly.
+
+### How to Contribute
+
+1. **Report Issues**: Found a bug? [Open an issue](../../issues)
+2. **Feature Requests**: Have an idea? [Start a discussion](../../discussions)
+3. **Pull Requests**: Ready to contribute code? 
+   - Fork the repository
+   - Create a feature branch (`git checkout -b feature/my-feature`)
+   - Commit your changes (`git commit -am 'Add my feature'`)
+   - Push to the branch (`git push origin feature/my-feature`)
+   - Open a Pull Request
+
+### Areas We Need Help With
+
+- 🧪 **Unit tests** - Expand test coverage
+- 📚 **Documentation** - Improve guides and API docs
+- 🎨 **Visualization** - Enhance plotting capabilities
+- 🚀 **Performance** - Optimize solver performance
+- 🐛 **Bug fixes** - Help us squash bugs
+
+### Development Setup
+
+```bash
+# Clone and setup development environment
+git clone https://github.com/yourusername/tidalflow-swe.git
+cd tidalflow-swe
+
+# Create environment
+conda env create -f environment.yml
+conda activate tidalflow
+
+# Install in development mode
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+
+# Format code
+black tidalflow/
+isort tidalflow/
+
+# Type checking
+mypy tidalflow/
+```
+
+---
+
+## Citation
+
+If you use TidalFlow-SWE in your research, teaching, or applications, please cite it:
+
+### BibTeX
+
+```bibtex
+@software{tidalflow2025,
+  title={TidalFlow-SWE: A Python-based 2D Shallow Water Equations Solver},
+  author={Fuentes, Jose},
+  year={2025},
+  url={https://github.com/yourusername/tidalflow-swe},
+  license={MIT}
+}
+```
+
+### APA
+
+Fuentes, J. (2025). TidalFlow-SWE: A Python-based 2D shallow water equations solver. Retrieved from https://github.com/yourusername/tidalflow-swe
+
+### MLA
+
+Fuentes, Jose. "TidalFlow-SWE: A Python-based 2D Shallow Water Equations Solver." GitHub, 2025, https://github.com/yourusername/tidalflow-swe.
 
 ---
 

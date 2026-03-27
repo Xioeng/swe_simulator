@@ -42,7 +42,7 @@ def run_gaussian_hump_example() -> None:
         nx=100,
         ny=100,
         # Time stepping
-        t_final=1.0,  # seconds
+        t_final=5.0,  # seconds
         dt=0.25,  # seconds
         # Physics
         gravity=9.81,
@@ -122,7 +122,7 @@ def run_gaussian_hump_example() -> None:
         file_name_velocity = "gaussian_hump_velocity.gif"
         writer = "pillow"
         figsize_surface = (6, 4)
-        figsize_velocity = (6, 6)
+        figsize_velocity = (5, 5)
         logger.info("Animating results...")
         tidalflow.utils.visualization.animate_surface(
             output_path=solver.config.output_dir,
