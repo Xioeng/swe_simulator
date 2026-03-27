@@ -36,7 +36,7 @@ def run_radial_dam_break_example() -> None:
         ny=50,
         # Time
         t_final=1000.0,  # seconds
-        dt=10.0,  # seconds
+        dt=5.0,  # seconds
         # Physics
         gravity=9.81,
         # Boundary conditions
@@ -136,6 +136,7 @@ def run_radial_dam_break_example() -> None:
         writer = "pillow"
         figsize_surface = (8, 6)
         figsize_velocity = (8, 8)
+        fps = 20
 
         tidalflow.utils.visualization.animate_surface(
             output_path=solver.config.output_dir,
@@ -148,6 +149,7 @@ def run_radial_dam_break_example() -> None:
             writer=writer,
             figsize=figsize_surface,
             mpl_rc_params=mpl_rc_params,
+            fps=fps,
         )
         tidalflow.utils.visualization.animate_solution(
             output_path=solver.config.output_dir,
@@ -161,6 +163,7 @@ def run_radial_dam_break_example() -> None:
             figsize=figsize_velocity,
             mpl_rc_params=mpl_rc_params,
             arrow_step=2,
+            fps=fps,
         )
         logger.info("Visualization complete!")
 

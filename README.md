@@ -1,5 +1,10 @@
 # TidalFlow-SWE
 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Development Status](https://img.shields.io/badge/status-Alpha-yellow.svg)]()
+
 A Python-based 2D Shallow Water Equations (SWE) solver using [PyClaw](http://www.clawpack.org/pyclaw/) for simulating storm surge, tsunami propagation, and coastal flooding scenarios.
 
 ## Features
@@ -22,28 +27,58 @@ See example outputs before diving into implementation details.
 
 ### Gaussian Hump  
 
-<img src="docs/assets/videos/gaussian_hump.gif" width="auto" height="200"/><img src="docs/assets/videos/gaussian_hump_velocity.gif" width="auto" height="200"/>
+<img src="docs/assets/videos/gaussian_hump.gif" width="auto" height="450"/><img src="docs/assets/videos/gaussian_hump_velocity.gif" width="auto" height="450"/>
 
 
 ### Biscayne Bay Storm Surge
 
-<img src="docs/assets/videos/biscayne_bay.gif" width="auto" height="200"/><img src="docs/assets/videos/biscayne_bay_velocity.gif" width="auto" height="200"/>
+<img src="docs/assets/videos/biscayne_bay.gif" width="auto" height="450"/><img src="docs/assets/videos/biscayne_bay_velocity.gif" width="auto" height="450"/>
 
 
 ## Table of Contents
 
+### 🚀 Getting Started
 - [Simulation Demos](#simulation-demos)
-- [Documentation Map](#documentation-map)
 - [Installation](#installation)
+  - [Setup Environment](#1-create-and-activate-conda-environment)
+  - [Install Package](#2-install-from-source)
+  - [Development Mode](#3-development-install-editable-optional)
 - [Quick Start](#quick-start)
-- [Configuration](#configuration)
+  - [Simple Gaussian Wave](#example-1-simple-gaussian-wave)
+  - [Storm Surge Simulation](#example-2-storm-surge-with-real-bathymetry)
+
+### 📚 Documentation & API Reference
+- [Configuration Guide](#configuration)
+  - [SimulationConfig](#simulationconfig-dataclass)
+  - [Boundary Conditions](#boundary-conditions)
 - [Class Reference](#class-reference)
+  - [SimulationConfig Docs](docs/classes/simulation_config.md)
+  - [SWESolver Docs](docs/classes/swe_solver.md)
+  - [Providers Docs](docs/classes/providers.md)
+  - [WindForcing Docs](docs/classes/wind_forcing.md)
+  - [SWEResult Docs](docs/classes/swe_result.md)
+- [Getting Started Guide](docs/getting-started.md)
+- [Examples](docs/examples.md)
+
+### 💡 Usage & Examples
 - [Complete Examples](#complete-examples)
+  - [Gaussian Wave](#example-1-simple-gaussian-wave-1)
+  - [Storm Surge](#example-2-storm-surge-simulation)
+  - [Visualization](#example-3-visualization)
 - [Output Format](#output-format)
 - [Utilities](#utilities)
+  - [Reading Solutions](#reading-solutions)
+  - [Visualization](#visualization)
+  - [Bathymetry](#bathymetry)
+
+### 🔬 Advanced Topics
 - [Physics](#physics)
 - [Tips and Best Practices](#tips-and-best-practices)
 - [Troubleshooting](#troubleshooting)
+- [MPI Parallelization](#7-mpi-parallelization)
+- [Performance Optimization](#9-performance-optimization)
+
+### 📁 Reference
 - [Project Structure](#project-structure)
 - [Data Requirements](#data-requirements)
 - [References](#references)
@@ -51,31 +86,12 @@ See example outputs before diving into implementation details.
 
 ---
 
-## Documentation Map
-
-Use this section as the canonical entry point for project documentation.
-
-### Guides
-
-- [Docs Home](docs/index.md)
-- [Getting Started](docs/getting-started.md)
-- [Examples](docs/examples.md)
-- [Video Demos](docs/assets/videos/README.md)
-
-### Class Reference
-
-- [SimulationConfig](docs/classes/simulation_config.md)
-- [SWESolver](docs/classes/swe_solver.md)
-- [Providers](docs/classes/providers.md)
-- [WindForcing](docs/classes/wind_forcing.md)
-- [SWEResult](docs/classes/swe_result.md)
-
 ---
 
 ## Installation
 
-Install `tidalflow` as a Python package (recommended), so imports like
-`import tidalflow` work consistently across scripts, notebooks, and tests.
+> [!IMPORTANT]
+> Install `tidalflow` as a Python package (recommended) so imports like `import tidalflow` work consistently across scripts, notebooks, and tests.
 
 ### 1) Create and activate conda environment
 
@@ -101,6 +117,9 @@ Use editable mode while developing the package:
 pip install -r requirements.txt
 pip install -e .
 ```
+
+> [!TIP]
+> For development, use editable install with `pip install -e .` so your changes take effect immediately without reinstalling.
 
 ---
 
@@ -213,7 +232,10 @@ if solver.rank == 0:
 ---
 
 ## Configuration
+> [!NOTE]
+> The `SimulationConfig` dataclass centralizes all simulation parameters. Configuration is validated automatically in `__post_init__()` to catch errors early.
 
+Here's how to configure a simulation
 ### SimulationConfig Dataclass
 
 The `SimulationConfig` dataclass centralizes all simulation parameters:
@@ -256,6 +278,9 @@ config.save("config.json")
 # Load configuration
 config = tidalflow.config.SimulationConfig.load("config.json")
 ```
+
+> [!IMPORTANT]
+> Always ensure `lon_range[0] < lon_range[1]` and `lat_range[0] < lat_range[1]`. The `validate()` method checks these automatically.
 
 ### Boundary Conditions
 
@@ -543,6 +568,9 @@ bathymetry[np.isnan(bathymetry)] = 0.0
 
 The solver solves the 2D shallow water equations:
 
+> [!NOTE]
+> The solver uses a Roe-type Riemann solver (`shallow_roe_with_efix_2D`) with support for bathymetric source terms and wind forcing.
+
 ```
 ∂h/∂t + ∂(hu)/∂x + ∂(hv)/∂y = 0
 ∂(hu)/∂t + ∂(hu² + gh²/2)/∂x + ∂(huv)/∂y = -gh∂b/∂x + τˣ
@@ -583,6 +611,9 @@ Where:
 
 ### 2. Time Step Selection
 
+> [!WARNING]
+> Violating the CFL condition (`dt` too large) will cause numerical instability and NaN values. When in doubt, reduce `dt`.
+
 - **CFL condition**: `dt` should satisfy Courant-Friedrichs-Lewy condition
 - **Rule of thumb**: `dt ≤ min(dx, dy) / sqrt(g * max_depth)`
 - **Start conservative**: Use smaller `dt` initially (0.5-1.0 seconds)
@@ -596,6 +627,9 @@ Where:
 - **Mixed conditions**: Different BCs on different edges
 
 ### 4. Initial Conditions
+
+> [!IMPORTANT]
+> Initial water depth must be positive or zero everywhere (`h ≥ 0`). The solver cannot handle negative water depths. Use smooth transitions to avoid discontinuities.
 
 - **Positive depths**: Ensure `h ≥ 0` everywhere
 - **Smooth transitions**: Avoid discontinuities in initial conditions
@@ -628,6 +662,9 @@ mpiexec -n 4 python your_script.py
 ```
 
 - Automatically parallelized if MPI is available
+> [!TIP]
+> Always validate your inputs before running: `config.validate()` for configuration, check bathymetry and initial condition shapes, and plot bathymetry to visually inspect for anomalies.
+
 - Check `solver.rank` for rank-specific operations
 - Only rank 0 should do I/O and visualization
 - Load balancing handled by PyClaw
@@ -653,6 +690,9 @@ mpiexec -n 4 python your_script.py
 ## Troubleshooting
 
 ### Common Errors and Solutions
+
+> [!NOTE]
+> Most numerical instabilities are caused by violating the CFL condition or providing invalid initial conditions. Always validate first!
 
 **"Configuration validation failed"**
 - Check that all required parameters are set
@@ -701,6 +741,10 @@ conda install cartopy  # Recommended method
 ```
 
 **Simulation unstable (NaN or Inf in output)**
+
+> [!WARNING]
+> This typically indicates the CFL condition was violated. Reduce `dt` immediately and verify your initial conditions are physically reasonable.
+
 - Reduce `dt` (time step too large)
 - Check initial conditions for discontinuities
 - Verify bathymetry data is reasonable
@@ -740,11 +784,14 @@ data/
 
 ### GEBCO Bathymetry Data
 
-Download bathymetry data from [GEBCO](https://www.gebco.net/):
+> [!IMPORTANT]
+> Real bathymetry data is required for realistic coastal simulations. Download from GEBCO (Gridded Bathymetric Data) for your region of interest.
+
+How to get GEBCO data:
 
 1. Go to https://www.gebco.net/data_and_products/gridded_bathymetry_data/
 2. Select your region of interest
-3. Download as NetCDF format
+3. Download as **NetCDF format** (not other formats)
 4. Place in `data/` directory
 
 Example filename: `gebco_2025_n25.9288_s25.6527_w-80.2016_e-80.0642.nc`

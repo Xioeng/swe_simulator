@@ -43,7 +43,7 @@ def run_gaussian_hump_example() -> None:
         ny=100,
         # Time stepping
         t_final=50.0,  # seconds
-        dt=0.5,  # seconds
+        dt=0.25,  # seconds
         # Physics
         gravity=9.81,
         # Boundary conditions (wall on all sides)
