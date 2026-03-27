@@ -134,8 +134,8 @@ def run_radial_dam_break_example() -> None:
         file_name_surface = "biscayne_bay.gif"
         file_name_velocity = "biscayne_bay_velocity.gif"
         writer = "pillow"
-        figsize_surface = (8, 6)
-        figsize_velocity = (8, 8)
+        figsize_surface = (6, 5)
+        figsize_velocity = (6, 7)
         fps = 20
 
         tidalflow.utils.visualization.animate_surface(

@@ -29,10 +29,14 @@ See example outputs before diving into implementation details.
 
 <img src="docs/assets/videos/gaussian_hump.gif" width="auto" height="275"/><img src="docs/assets/videos/gaussian_hump_velocity.gif" width="auto" height="275"/>
 
+*Water surface elevation* | *Velocity field*
+
 
 ### Biscayne Bay Storm Surge
 
 <img src="docs/assets/videos/biscayne_bay.gif" width="auto" height="275"/><img src="docs/assets/videos/biscayne_bay_velocity.gif" width="auto" height="275"/>
+
+*Water surface elevation* | *Velocity field*
 
 
 ## Table of Contents
