@@ -27,16 +27,28 @@ See example outputs before diving into implementation details.
 
 ### Gaussian Hump  
 
-<img src="docs/assets/videos/gaussian_hump.gif" width="auto" height="275"/><img src="docs/assets/videos/gaussian_hump_velocity.gif" width="auto" height="275"/>
-
-*Water surface elevation* | *Velocity field*
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+  <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+    <img src="docs/assets/videos/gaussian_hump.gif" width="45%" height="auto"/>
+    <img src="docs/assets/videos/gaussian_hump_velocity.gif" width="45%" height="auto"/>
+  </div>
+  <div style="text-align: center;">
+    <em>Water surface elevation</em> | <em>Velocity field</em>
+  </div>
+</div>
 
 
 ### Biscayne Bay Storm Surge
 
-<img src="docs/assets/videos/biscayne_bay.gif" width="auto" height="275"/><img src="docs/assets/videos/biscayne_bay_velocity.gif" width="auto" height="275"/>
-
-*Water surface elevation* | *Velocity field*
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+  <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+    <img src="docs/assets/videos/biscayne_bay.gif" width="45%" height="auto"/>
+    <img src="docs/assets/videos/biscayne_bay_velocity.gif" width="45%" height="auto"/>
+  </div>
+  <div style="text-align: center;">
+    <em>Water surface elevation</em> | <em>Velocity field</em>
+  </div>
+</div>
 
 
 ## Table of Contents
