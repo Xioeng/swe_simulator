@@ -25,30 +25,18 @@ A Python-based 2D Shallow Water Equations (SWE) solver using [PyClaw](http://www
 
 See example outputs before diving into implementation details.
 
-### Gaussian Hump  
+### Gaussian Hump
 
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
-  <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-    <img src="docs/assets/videos/gaussian_hump.gif" width="45%" height="auto"/>
-    <img src="docs/assets/videos/gaussian_hump_velocity.gif" width="45%" height="auto"/>
-  </div>
-  <div style="text-align: center;">
-    <em>Water surface elevation</em> | <em>Velocity field</em>
-  </div>
-</div>
+| Water Surface Elevation | Velocity Field |
+|:---:|:---:|
+| ![gaussian_hump](docs/assets/videos/gaussian_hump.gif) | ![gaussian_hump_velocity](docs/assets/videos/gaussian_hump_velocity.gif) |
 
 
 ### Biscayne Bay Storm Surge
 
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
-  <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-    <img src="docs/assets/videos/biscayne_bay.gif" width="45%" height="auto"/>
-    <img src="docs/assets/videos/biscayne_bay_velocity.gif" width="45%" height="auto"/>
-  </div>
-  <div style="text-align: center;">
-    <em>Water surface elevation</em> | <em>Velocity field</em>
-  </div>
-</div>
+| Water Surface Elevation | Velocity Field |
+|:---:|:---:|
+| ![biscayne_bay](docs/assets/videos/biscayne_bay.gif) | ![biscayne_bay_velocity](docs/assets/videos/biscayne_bay_velocity.gif) |
 
 
 ## Table of Contents
