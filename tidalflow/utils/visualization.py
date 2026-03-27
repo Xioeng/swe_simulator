@@ -100,7 +100,7 @@ def initialize_plot(
             ccrs_proj_obj = projection_map.get(ccrs_proj.lower(), ccrs.PlateCarree())
             ax = fig.add_subplot(1, 1, 1, projection=ccrs_proj_obj)
         else:
-            ax = fig.add_subplot(1, 1, 1, projection="3d")
+            ax = fig.add_subplot(1, 1, 1, projection="3d", computed_zorder=False)
     else:
         if figsize is None:
             figsize = (8, 14)
@@ -432,6 +432,19 @@ def animate_surface(
         free_surface = bathymetry + h
         free_surface[h < wave_treshold] = np.nan
 
+        # Plot bathymetry first (underneath with lower zorder)
+        ax.plot_surface(
+            X,
+            Y,
+            bathymetry,
+            cmap="BrBG",
+            linewidth=0,
+            antialiased=False,
+            alpha=0.7,
+            zorder=1,
+        )
+
+        # Plot water surface on top (higher zorder)
         surface = ax.plot_surface(
             X,
             Y,
@@ -442,16 +455,7 @@ def animate_surface(
             alpha=0.95,
             vmin=float(np.nanmin(free_surface)),
             vmax=float(np.nanmax(free_surface)),
-        )
-
-        ax.plot_surface(
-            X,
-            Y,
-            bathymetry,
-            cmap="terrain",
-            linewidth=0,
-            antialiased=False,
-            alpha=0.8,
+            zorder=2,
         )
         colorbar = fig.colorbar(surface, cax=cax, label="Surface Elevation (m)")
 

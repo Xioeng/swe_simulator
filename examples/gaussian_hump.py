@@ -123,6 +123,7 @@ def run_gaussian_hump_example() -> None:
         writer = "pillow"
         figsize_surface = (5, 4)
         figsize_velocity = (7, 5)
+        fps = 20
         logger.info("Animating results...")
         tidalflow.utils.visualization.animate_surface(
             output_path=solver.config.output_dir,
@@ -135,6 +136,7 @@ def run_gaussian_hump_example() -> None:
             writer=writer,
             figsize=figsize_surface,
             mpl_rc_params=mpl_rc_params,
+            fps=fps,
         )
         tidalflow.utils.visualization.animate_solution(
             output_path=solver.config.output_dir,
@@ -148,6 +150,7 @@ def run_gaussian_hump_example() -> None:
             figsize=figsize_velocity,
             mpl_rc_params=mpl_rc_params,
             arrow_step=5,
+            fps=fps,
         )
         logger.info("Visualization complete!")
 

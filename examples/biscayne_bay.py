@@ -35,7 +35,7 @@ def run_radial_dam_break_example() -> None:
         nx=50,
         ny=50,
         # Time
-        t_final=1000.0,  # seconds
+        t_final=100.0,  # seconds
         dt=5.0,  # seconds
         # Physics
         gravity=9.81,
@@ -129,7 +129,7 @@ def run_radial_dam_break_example() -> None:
         frames = None  # All frames
         wave_threshold = 1e-2
         interval = 50
-        save = True
+        save = False
         dark_mode = True
         file_name_surface = "biscayne_bay.gif"
         file_name_velocity = "biscayne_bay_velocity.gif"
