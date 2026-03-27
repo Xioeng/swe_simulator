@@ -24,20 +24,20 @@ See example outputs before diving into implementation details.
 
 <div style="display: flex; gap: 20px; align-items: center;">
     <div>
-        <img src="docs/assets/videos/gaussian_hump.gif" width="100%" height="auto"/>
+        <img src="docs/assets/videos/gaussian_hump.gif" width="50%" height="auto"/>
     </div>
     <div>
-        <img src="docs/assets/videos/gaussian_hump_velocity.gif" width="100%" height="auto"/>
+        <img src="docs/assets/videos/gaussian_hump_velocity.gif" width="50%" height="auto"/>
     </div>
 </div>
 
 ### Biscayne Bay Storm Surge
 <div style="display: flex; gap: 20px; align-items: center;">
     <div>
-        <img src="docs/assets/videos/biscayne_bay.gif" width="100%" height="auto"/>
+        <img src="docs/assets/videos/biscayne_bay.gif" width="50%" height="auto"/>
     </div>
     <div>
-        <img src="docs/assets/videos/biscayne_bay_velocity.gif" width="100%" height="auto"/>
+        <img src="docs/assets/videos/biscayne_bay_velocity.gif" width="50%" height="auto"/>
     </div>
 </div>
 
